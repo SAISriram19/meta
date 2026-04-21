@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Desktop_Commander__read_file",
+      "Bash(python3 -c ' *)",
+      "WebSearch",
+      "Bash(gh repo *)",
+      "WebFetch(domain:github.com)"
+    ]
+  }
+}
