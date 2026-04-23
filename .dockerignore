@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+eval_outputs/
+demo_outputs/
+outputs/
+.git/
+.github/
+.claude/
+tests/
+scripts/train*.ipynb
+scripts/train.py
+scripts/*.png
+*.png
+notes/

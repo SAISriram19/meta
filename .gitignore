@@ -1,0 +1,93 @@
+# --------------------------------------------------------------------------- #
+# Secrets — never commit                                                      #
+# --------------------------------------------------------------------------- #
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+
+# --------------------------------------------------------------------------- #
+# Runtime artifacts — regenerate, don't track                                  #
+# --------------------------------------------------------------------------- #
+eval_outputs/
+demo_outputs/
+outputs/
+runs/
+wandb/
+tb_logs/
+*.log
+
+# Generated scenarios from the curriculum — keep hand-authored, drop generated
+env/scenarios/gen/
+
+# Model checkpoints / caches
+checkpoints/
+*.ckpt
+*.safetensors
+*.bin
+model_cache/
+.cache/
+.hf_cache/
+
+# --------------------------------------------------------------------------- #
+# Python                                                                      #
+# --------------------------------------------------------------------------- #
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Virtual envs (careful — do NOT name a virtualenv `env` here, it'd clash with
+# the python package. Use .venv / venv / virtualenv instead.)
+.venv/
+venv/
+env_venv/
+virtualenv/
+.python-version
+
+# Jupyter
+.ipynb_checkpoints/
+*-checkpoint.ipynb
+
+# --------------------------------------------------------------------------- #
+# IDE / editor                                                                #
+# --------------------------------------------------------------------------- #
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Agent/assistant scratch
+.claude/
+.cursor/
+CLAUDE.local.md
+
+# --------------------------------------------------------------------------- #
+# Node / frontend (in case we ever add a UI)                                  #
+# --------------------------------------------------------------------------- #
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# --------------------------------------------------------------------------- #
+# OS                                                                          #
+# --------------------------------------------------------------------------- #
+*.tmp
+*.temp
+Desktop.ini
