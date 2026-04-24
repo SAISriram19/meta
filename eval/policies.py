@@ -545,6 +545,51 @@ def make_llm_policy(provider: str, model: str) -> PolicyFn:
 # --------------------------------------------------------------------------- #
 
 
+def make_best_of_n_policy(base_name: str, n: int = 5) -> PolicyFn:
+    """Best-of-N — generate N candidates from a base policy, score each with
+    RuleBasedCritic against the current inbound, return the highest-scored.
+
+    Inspired by Silicon Mirror (arXiv 2604.00478) which used Generator/Critic
+    for single-turn anti-sycophancy. We extend to per-step action selection.
+
+    Cost: N * base_policy_cost per env step. Use stochastic base (LLM with
+    sampling on, or rule-based with non-determinism). Rule-based-deterministic
+    bases will give N identical candidates — no benefit.
+    """
+    from env.critic import RuleBasedCritic
+    critic = RuleBasedCritic()
+    base = build_policy(base_name)
+
+    def act(ctx):
+        candidates = []
+        for _ in range(n):
+            try:
+                a = base(ctx)
+                candidates.append(a)
+            except Exception:
+                continue
+        if not candidates:
+            return WaitAction()
+        inbound = ctx.observation.new_messages[-1] if ctx.observation.new_messages else None
+        best_action = candidates[0]
+        best_score = float("-inf")
+        for a in candidates:
+            if isinstance(a, SendMessageAction) and inbound is not None:
+                v = critic.grade(inbound, a)
+                score = v.principle - v.sycophancy - 0.5 * v.over_refusal
+            elif isinstance(a, WaitAction) and inbound is not None:
+                # WAIT with inbound = silent cave penalty.
+                score = -0.4
+            else:
+                # Memory/Reflect/Decision actions: small positive default
+                score = 0.05
+            if score > best_score:
+                best_score = score
+                best_action = a
+        return best_action
+    return act
+
+
 def build_policy(name: str) -> PolicyFn:
     if name == "sycophant":
         return make_sycophant()
@@ -556,6 +601,12 @@ def build_policy(name: str) -> PolicyFn:
         return make_adaptive_principled()
     if name == "memory_aware":
         return make_memory_aware()
+    # Best-of-N wrapper: bestn:N:<base_policy_name>
+    # e.g.  bestn:5:nvidia:meta/llama-3.3-70b-instruct
+    if name.startswith("bestn:"):
+        rest = name[len("bestn:"):]
+        n_str, base = rest.split(":", 1)
+        return make_best_of_n_policy(base, n=int(n_str))
     if name.startswith("openai:"):
         return make_llm_policy("openai", name.split(":", 1)[1])
     if name.startswith("anthropic:"):
