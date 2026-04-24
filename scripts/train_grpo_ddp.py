@@ -80,7 +80,7 @@ def main():
     ap.add_argument("--lr", type=float, default=2e-5)
     ap.add_argument("--per-device-batch", type=int, default=2)
     ap.add_argument("--grad-accum", type=int, default=4)
-    ap.add_argument("--num-generations", type=int, default=6)
+    ap.add_argument("--num-generations", type=int, default=4)
     ap.add_argument("--max-prompt-length", type=int, default=1500)
     ap.add_argument("--max-completion-length", type=int, default=200)
     ap.add_argument("--temperature", type=float, default=0.9)
@@ -93,10 +93,17 @@ def main():
     accelerator = Accelerator()
     is_main = accelerator.is_main_process
 
+    effective_batch = args.per_device_batch * accelerator.num_processes * args.grad_accum
+    if effective_batch % args.num_generations != 0:
+        raise ValueError(
+            f"generation_batch_size ({effective_batch}) must be divisible by "
+            f"num_generations ({args.num_generations}). Divisors of {effective_batch}: "
+            f"{[d for d in range(1, effective_batch+1) if effective_batch % d == 0]}"
+        )
     if is_main:
         print(f"[config] model={args.model} steps={args.max_steps} lr={args.lr}")
         print(f"[config] world_size={accelerator.num_processes} per_device_batch={args.per_device_batch} grad_accum={args.grad_accum}")
-        print(f"[config] effective_batch_per_step={args.per_device_batch * accelerator.num_processes * args.grad_accum}")
+        print(f"[config] effective_batch={effective_batch} num_generations={args.num_generations}")
 
     # 4-bit quant config — same pattern Unsloth uses under the hood but DDP-compatible.
     bnb_config = BitsAndBytesConfig(
