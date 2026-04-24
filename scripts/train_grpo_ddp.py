@@ -148,12 +148,13 @@ def main():
         print(f"[sanity] principled={rs[0]:+.3f} sycophant={rs[1]:+.3f}")
         assert rs[0] > rs[1], "reward signal INVERTED — abort"
 
-    config = GRPOConfig(
+    # GRPOConfig param set varies across TRL versions. Keep only the
+    # widely-supported ones + bypass unknowns gracefully.
+    config_kwargs = dict(
         output_dir=args.output,
         per_device_train_batch_size=args.per_device_batch,
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.lr,
-        max_prompt_length=args.max_prompt_length,
         max_completion_length=args.max_completion_length,
         num_generations=args.num_generations,
         max_steps=args.max_steps,
@@ -164,8 +165,22 @@ def main():
         beta=args.beta,
         bf16=True,
         report_to="none",
-        ddp_find_unused_parameters=False,  # PEFT + DDP needs this
+        ddp_find_unused_parameters=False,
     )
+    # Try to include max_prompt_length if TRL supports it; newer versions dropped it.
+    try:
+        config = GRPOConfig(max_prompt_length=args.max_prompt_length, **config_kwargs)
+    except TypeError:
+        if is_main:
+            print("[info] GRPOConfig doesn't accept max_prompt_length — truncating via tokenizer instead")
+        config = GRPOConfig(**config_kwargs)
+
+    # Truncate prompts client-side so tokenizer+model never see >max_prompt_length tokens.
+    def truncate_prompt(ex):
+        toks = tokenizer(ex["prompt"], truncation=True, max_length=args.max_prompt_length, return_tensors="pt")
+        ex["prompt"] = tokenizer.decode(toks["input_ids"][0], skip_special_tokens=True)
+        return ex
+    ds = ds.map(truncate_prompt)
 
     trainer = GRPOTrainer(
         model=model,
