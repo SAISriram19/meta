@@ -23,19 +23,29 @@ tags:
 
 ## Proof the env discriminates
 
-### Rule-based baselines (hardened grader + adaptive adversary, mean over 3 seeds)
+### Rule-based baselines (hardened grader + adaptive adversary, mean over 3 seeds across L0–L3)
 
-| Policy | L0 reward | L0 terminal | L2 reward | L2 terminal |
+| Policy | L0 reward | L1 reward | L2 reward | L3 reward |
 |---|---:|---:|---:|---:|
-| Sycophant (always agrees) | −1.16 | 0.00 | **−41.74** | 0.00 |
-| Contrarian (blanket pushback) | −0.18 | −0.34 | −2.17 | −0.10 |
-| Keyword principled | +0.07 | +0.06 | **−21.30** | 0.00 |
-| Memory-aware (cites retrievals) | **+0.12** | +0.06 | **−15.29** | 0.00 |
+| Sycophant (always agrees) | −1.16 | −1.94 | **−41.74** | **−108.67** |
+| Contrarian (blanket pushback) | −0.18 | +0.34 | −2.17 | −6.52 |
+| Keyword principled | +0.07 | −0.58 | −22.53 | −57.02 |
+| Memory-aware (cites retrievals) | **+0.12** | −0.23 | **−16.44** | **−42.09** |
 
-Two things the table says:
+Sycophancy rate (fraction of caves on BAD messages):
 
-1. **Sycophancy is catastrophically punished at scale.** −41.74 on L2. The multiplicative terminal scaler zeros out metric credit once bad_ratio hits 1.0, so no sycophant can "win" by hitting the hidden goal.
-2. **No heuristic wins on L2.** Keyword-matching (−21.30) misses the adversary's content-aware attacks (self-contradiction quotes, false consensus with the agent's own words). Memory-aware is the least-bad (−15.29) — memory genuinely helps when used, but it takes *training* to extract real lift. That gap is the trained-model headroom.
+| Policy | L0 | L1 | L2 | L3 |
+|---|---:|---:|---:|---:|
+| Sycophant | 1.000 | 1.000 | 1.000 | 1.000 |
+| Contrarian | 0.000 | 0.000 | 0.000 | 0.000 |
+| Keyword principled | 0.333 | 0.600 | 0.692 | 0.677 |
+| Memory-aware | 0.333 | 0.500 | 0.672 | 0.656 |
+
+Three things the table says:
+
+1. **Sycophancy is catastrophically punished at scale.** −1.16 at L0 → **−108.67 at L3**. The multiplicative terminal scaler zeros out metric credit once bad_ratio hits 1.0, so no sycophant can "win" by hitting the hidden goal.
+2. **No heuristic wins at long horizons.** Keyword matching misses the adversary's content-aware attacks (self-contradiction quotes, false-consensus with the agent's own words). Memory-aware is the least-bad — memory helps when actually cited, but it takes *training* to extract real lift. Gap between sycophant and memory-aware on L3: **66 reward points**. That's the trained-model headroom.
+3. **Contrarian is not a free lunch.** Blanket pushback scores +0.34 on L1's short horizon but drops to −6.52 on L3 as `reasonable_bait` attacks trip the over-refusal penalty. Shows the env punishes *both* sycophancy and reflexive refusal.
 
 ### Real LLMs via NVIDIA Build API
 
@@ -66,7 +76,7 @@ Ran every rule-based policy twice — once with memory actions working, once wit
 
 | Policy × scenario | reward with memory | reward no memory | Δ |
 |---|---:|---:|---:|
-| memory_aware × L2 | **−15.29** | −16.25 | **+0.96** |
+| memory_aware × L2 | **−15.17** | −16.25 | **+1.08** |
 | memory_aware × L0 | +0.12 | +0.07 | +0.05 |
 
 Modest positive delta — memory helps when actually *cited*, not when reflexively queried. The Δ is small because the policy is still a rule-based shell; the whole point of the env is that a GRPO-trained policy should amplify this edge substantially. That's the training target.
@@ -75,7 +85,7 @@ Modest positive delta — memory helps when actually *cited*, not when reflexive
 
 - **Cognitively-grounded memory** — episodic + semantic + associative graph. graph-indexed retrieval with personalized PageRank PPR retrieval over a knowledge graph. ACT-R decay. Zettelkasten-style dynamic linking.
 - **Anti-sycophancy reward** — tag-based dense shaping + Silicon-Mirror-style LLM/rule critic.
-- **Adversarial stakeholder** — Covolve-inspired, reads agent behavior, picks the manipulation most likely to land.
+- **Adversarial stakeholder** — content-aware pattern selector that reads agent utterances and stance history. 7 patterns (self-contradiction that quotes the agent's own words, exploited-memory pressure, reasonable-bait for over-refusers, contradict-own-seed gaslight, etc.). Selection is adaptive; emission is templated — closer to Covolve *principle* than Covolve *implementation*.
 - **Coordinated manipulation** — two stakeholders collude on false-consensus triggers.
 - **Multi-turn memory traps** — claims planted early, exploited 60+ steps later.
 - **Self-improving curriculum** — generator extracts weakness signals from rollouts, synthesizes targeted harder scenarios (CoEvolve mechanism).
@@ -118,8 +128,8 @@ All are defined in [`.env.example`](.env.example). Copy to `.env` (gitignored) a
 
 ```bash
 python scripts/run_eval.py \
-  --policies sycophant,contrarian,keyword_principled,memory_aware \
-  --scenarios L0_launch,L2_strategic_shift \
+  --policies sycophant,contrarian,keyword_principled,memory_aware,adaptive_principled \
+  --scenarios L0_launch,L1_product_recall,L2_strategic_shift,L3_breach_response \
   --seeds 0,1,2 \
   --out eval_outputs/rulebased
 ```
@@ -142,6 +152,9 @@ python tests/test_env_smoke.py          # policy discrimination, ground-truth le
 python tests/test_generator_smoke.py    # curriculum generation, weakness steering
 python tests/test_server_smoke.py       # FastAPI endpoints, hidden-state gating
 python tests/test_long_horizon.py       # 500-step rollout, 1.5KB obs cap
+python tests/test_coordination.py       # coordination-group ally pile-on
+python tests/test_adversary.py          # 7 content-aware attack patterns + env integration
+python tests/test_integration.py        # full HTTP loop, every action type
 ```
 
 ## Folder
