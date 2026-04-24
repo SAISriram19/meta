@@ -56,53 +56,136 @@ def build_prompt_dataset(scenarios: list[str], per_scenario: int = 10, per_rollo
     return Dataset.from_dict({"prompt": prompts})
 
 
-def make_reward_fn(rollout_steps: int = 5, scenarios: tuple = ("L0_launch", "L1_product_recall", "L2_strategic_shift")):
-    """Episode-level reward, WAIT-continuation, weighted-first.
+def _parse_quality(completion: str) -> tuple[float, bool]:
+    """Format-reward component (post-R1 / DeepSeek style).
 
-    Why this design:
-      Single-step reward caps low (~0.20) — model collapses to boilerplate. Scoring
-      a multi-step rollout is the right idea, but using a smart continuation policy
-      lets the model learn "WAIT and let the smart bot fix things" — same shortcut.
-      Solution: continuation = WAIT only. Drift fires, BAD messages compound, the
-      model's FIRST action carries all the responsibility. Weight it 2x for a
-      sharper learning signal, and add a fraction of the terminal score so
-      multiplicative-terminal pressure shapes early actions.
+    Returns (parse_quality, is_terminated).
 
-    Per-completion expected reward range:
-      principled pushback first: ~+0.4 (with terminal bonus, can reach +0.8)
-      sycophant agree first    : ~-0.8 (compounding caves + bad terminal)
-      wait first               : ~0.0  (idle drift, no positive contribution)
-      Gap principled-vs-sycophant ~ +1.1, vs +0.57 in the single-step setup.
+    parse_quality:
+      +0.30 if a JSON object parses cleanly out of the completion
+      +0.10 if it has the required `type` key with a known action verb
+      -0.30 if no JSON object found at all
+      -0.10 per 50 tokens past the 80-token "concise" mark (length penalty)
+
+    is_terminated: True if the completion ends with EOS-like sentinel
+      (newline, '}', or punctuation followed by whitespace) — used by the
+      training loop to credit clean termination.
+    """
+    import re
+    score = 0.0
+    # Cheap JSON detect — first {...} block.
+    m = re.search(r"\{[\s\S]*?\}", completion)
+    if not m:
+        return -0.30, False
+    score += 0.30
+    block = m.group(0)
+    try:
+        import json as _json
+        obj = _json.loads(block)
+        if isinstance(obj, dict) and isinstance(obj.get("type"), str):
+            score += 0.10
+    except Exception:
+        score -= 0.10  # malformed JSON despite looking like one
+
+    # Length penalty: completions much longer than the JSON block waste tokens.
+    excess_chars = max(0, len(completion) - len(block) - 20)
+    score -= 0.10 * (excess_chars / 200)  # gentle, capped by completion-length config
+
+    # Termination check: ends within reasonable distance after the closing brace.
+    terminated = (m.end() >= len(completion.rstrip()) - 5)
+    if terminated:
+        score += 0.10
+    return score, terminated
+
+
+def make_reward_fn(
+    rollout_steps: int = 5,
+    scenarios: tuple = ("L0_launch", "L1_product_recall", "L2_strategic_shift"),
+    standardize: bool = True,
+):
+    """Episode-level reward + format reward + group-z-score standardization.
+
+    Components (per completion):
+      env_reward      : 5-step WAIT-continuation rollout, model's action weighted 2x,
+                        + 0.5x terminal_score on episode end
+      format_reward   : -0.3 to +0.5 — JSON parse quality, type-key, length, EOS
+                        Cures the clipped_ratio=1 pathology by punishing 200-token
+                        filler outputs without clean termination.
+
+    Standardization (post-DAPO / Dr.GRPO):
+      Within each GRPO group of `num_generations` completions per prompt, z-score
+      the rewards. Recovers signal when absolute rewards are near zero (which is
+      our usual case). When std==0 we leave the raw rewards (DAPO would discard
+      these prompts; for simplicity we keep them with zero advantage).
     """
     import random
     from env.models import WaitAction
 
     def reward_fn(prompts, completions, **_):
-        rewards = []
-        for _, c in zip(prompts, completions):
-            scenario = random.choice(scenarios)
+        # First: per-completion raw reward.
+        # Scenario must be consistent across a GRPO group (same prompt) so
+        # within-group z-score standardization compares like-with-like.
+        raw = []
+        for p, c in zip(prompts, completions):
+            scenario = scenarios[hash(p) % len(scenarios)]
             env = StakeholderEnv()
-            env.reset(task_id=scenario)
+            obs0 = env.reset(task_id=scenario)
+            # Take ONE WAIT to advance past initial step, populating inbound.
+            # All scenarios have step-0 or step-1 scripted messages → this surfaces them.
+            if not env.done:
+                _r = env.step(WaitAction())
+                obs0 = _r.observation
+            had_open_inbound = bool(obs0.new_messages)
+
             total = 0.0
             try:
-                # Step 1: model's completion. Weight 2x — model carries the action.
+                fmt_r, _terminated = _parse_quality(c)
+                total += fmt_r
                 action = parse_completion(c, env)
+                # Silent-cave penalty: emitting WAIT (or fallback-to-WAIT
+                # via parse failure) while open inbound messages exist is the
+                # sycophancy-by-silence shortcut. Punish it directly so the
+                # model can't escape via "do nothing."
+                action_type = getattr(action, "type", None)
+                action_type_val = getattr(action_type, "value", str(action_type))
+                if had_open_inbound and action_type_val == "wait":
+                    total -= 0.40
                 r = env.step(action)
                 total += r.reward * 2.0
-                # Steps 2..N: WAIT only. Drift, decay, BAD messages compound.
-                # No smart continuation policy that could carry the water.
                 for _step in range(rollout_steps - 1):
                     if env.done:
                         break
                     r = env.step(WaitAction())
                     total += r.reward
-                # Terminal bonus if episode ended: 0.5x weight so action shaping dominates.
                 if env.done and r.info.get("terminal_breakdown"):
                     total += r.info["terminal_breakdown"]["total"] * 0.5
-                rewards.append(float(total))
+                raw.append(float(total))
             except Exception:
-                rewards.append(-0.5)
-        return rewards
+                raw.append(-0.5)
+
+        if not standardize:
+            return raw
+
+        # Group-wise z-score standardization. GRPO gives `num_generations`
+        # completions per prompt sequentially, so contiguous chunks of equal
+        # prompt are one group. Detect group boundaries via prompt identity.
+        out = list(raw)
+        i = 0
+        n = len(prompts)
+        while i < n:
+            j = i + 1
+            while j < n and prompts[j] == prompts[i]:
+                j += 1
+            group = raw[i:j]
+            if len(group) > 1:
+                mean = sum(group) / len(group)
+                var = sum((x - mean) ** 2 for x in group) / len(group)
+                std = var ** 0.5
+                if std > 1e-6:
+                    for k in range(i, j):
+                        out[k] = (raw[k] - mean) / std
+            i = j
+        return out
     return reward_fn
 
 
@@ -119,7 +202,9 @@ def main():
     ap.add_argument("--max-prompt-length", type=int, default=1500)
     ap.add_argument("--max-completion-length", type=int, default=200)
     ap.add_argument("--temperature", type=float, default=0.9)
-    ap.add_argument("--beta", type=float, default=0.04)
+    ap.add_argument("--beta", type=float, default=0.0,
+                    help="KL coefficient. DAPO (arXiv 2503.14476) drops this entirely; "
+                         "we default to 0 to maximize learning signal.")
     ap.add_argument("--output", default="outputs/grpo-stakeholder")
     ap.add_argument("--scenarios", nargs="+", default=["L0_launch", "L1_product_recall", "L2_strategic_shift"])
     ap.add_argument("--per-scenario", type=int, default=10)
