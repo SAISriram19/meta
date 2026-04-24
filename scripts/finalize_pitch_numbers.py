@@ -29,18 +29,18 @@ HERO_POLICIES = [
 ]
 
 
-HERO_SCENARIOS = ["L0_launch", "L2_strategic_shift"]
+HERO_SCENARIOS = ["L0_launch", "L1_product_recall", "L2_strategic_shift", "L3_breach_response"]
 
 
 def render_hero(cells: list[dict]) -> str:
     lines = []
     lines.append("## Real model results (NVIDIA + Groq APIs + rule-based baselines)\n")
-    lines.append(
-        "| Policy | L0 reward | L0 syc. rate | L0 terminal | L2 reward | L2 syc. rate | L2 terminal |"
-    )
-    lines.append(
-        "|---|---:|---:|---:|---:|---:|---:|"
-    )
+    # Header row: one "reward" column per scenario (compact). Sycophancy/terminal
+    # broken out below.
+    header_sc = " | ".join(f"{sc.split('_')[0]} reward" for sc in HERO_SCENARIOS)
+    sep_sc = " | ".join(["---:"] * len(HERO_SCENARIOS))
+    lines.append(f"| Policy | {header_sc} |")
+    lines.append(f"|---|{sep_sc}|")
     for pol in HERO_POLICIES:
         row = {"policy": pol}
         seen = False
@@ -56,26 +56,69 @@ def render_hero(cells: list[dict]) -> str:
                 row[sc] = None
         if not seen:
             continue
-        cells_pair = [row[sc] for sc in HERO_SCENARIOS]
         def fmt(c, k, fn=lambda x: f"{x:.2f}"):
             if c is None:
                 return "—"
             return fn(c[k])
-        lines.append(
-            f"| `{pol}` | "
-            f"{fmt(cells_pair[0], 'reward_mean')} | "
-            f"{fmt(cells_pair[0], 'sycophancy_rate', lambda x: f'{x:.3f}')} | "
-            f"{fmt(cells_pair[0], 'terminal_mean')} | "
-            f"{fmt(cells_pair[1], 'reward_mean')} | "
-            f"{fmt(cells_pair[1], 'sycophancy_rate', lambda x: f'{x:.3f}')} | "
-            f"{fmt(cells_pair[1], 'terminal_mean')} |"
-        )
+        reward_cols = " | ".join(fmt(row[sc], "reward_mean") for sc in HERO_SCENARIOS)
+        lines.append(f"| `{pol}` | {reward_cols} |")
+    # Sycophancy-rate + terminal sub-tables.
+    lines.append("")
+    lines.append("### Sycophancy rate by scenario\n")
+    lines.append(f"| Policy | {' | '.join(sc.split('_')[0] for sc in HERO_SCENARIOS)} |")
+    lines.append(f"|---|{sep_sc}|")
+    for pol in HERO_POLICIES:
+        row_cells = [next((c for c in cells if c["policy"] == pol and c["scenario"] == sc), None) for sc in HERO_SCENARIOS]
+        if not any(row_cells):
+            continue
+        def fmt(c, k, fn=lambda x: f"{x:.3f}"):
+            if c is None:
+                return "—"
+            return fn(c[k])
+        vals = " | ".join(fmt(c, "sycophancy_rate") for c in row_cells)
+        lines.append(f"| `{pol}` | {vals} |")
+    lines.append("")
+    lines.append("### Terminal score by scenario\n")
+    lines.append(f"| Policy | {' | '.join(sc.split('_')[0] for sc in HERO_SCENARIOS)} |")
+    lines.append(f"|---|{sep_sc}|")
+    for pol in HERO_POLICIES:
+        row_cells = [next((c for c in cells if c["policy"] == pol and c["scenario"] == sc), None) for sc in HERO_SCENARIOS]
+        if not any(row_cells):
+            continue
+        def fmt(c, k, fn=lambda x: f"{x:.2f}"):
+            if c is None:
+                return "—"
+            return fn(c[k])
+        vals = " | ".join(fmt(c, "terminal_mean") for c in row_cells)
+        lines.append(f"| `{pol}` | {vals} |")
     return "\n".join(lines) + "\n"
 
 
 def main():
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--sources",
+        nargs="*",
+        default=None,
+        help=(
+            "Subdirectories of eval_outputs to scan (e.g. hardened_rulebased). "
+            "Default: scan everything. Use this to exclude pre-grader-fix data."
+        ),
+    )
+    args = ap.parse_args()
+
     root = Path("eval_outputs")
-    records = load_all(root)
+    if args.sources:
+        records = []
+        for src in args.sources:
+            sub = root / src
+            if not sub.exists():
+                print(f"[warn] source not found: {sub}")
+                continue
+            records.extend(load_all(sub))
+    else:
+        records = load_all(root)
     cells = aggregate(records)
     out_dir = root / "COMBINED"
     out_dir.mkdir(parents=True, exist_ok=True)

@@ -140,6 +140,17 @@ def main():
         weaknesses = extract_weakness_from_rollouts(learner_records)
         print(f"  learner weaknesses: {weaknesses}")
 
+        # --- Training iteration stub: if the learner exposes `.update()`,
+        #     apply it using the weakness signal. For `adaptive_principled`
+        #     this expands its keyword list; for future LLM learners this
+        #     is where a GRPO step would go. ---
+        learner_fn = policies.get(args.learner)
+        if learner_fn is not None and hasattr(learner_fn, "update"):
+            added = learner_fn.update(weaknesses=weaknesses, records=learner_records)
+            if added:
+                size = len(getattr(learner_fn, "learned_keywords", []))
+                print(f"  learner trained: +{added} patterns (total={size})")
+
         history.append(
             RoundResult(
                 round_idx=rnd,

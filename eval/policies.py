@@ -126,6 +126,100 @@ def make_keyword_principled() -> PolicyFn:
     return act
 
 
+def make_adaptive_principled() -> PolicyFn:
+    """Keyword principled that LEARNS new red-flag phrases from feedback.
+
+    Exposes `.update(records)` on the returned callable so the co-evolution
+    loop can feed prior-round rollouts in and extract new red-flag phrases
+    from messages the agent caved on. This is a stand-in for GRPO — the
+    real training loop swaps in `scripts/train_colab.ipynb` — but it lets us
+    show a "learning curve" across co-evolution rounds without a GPU.
+    """
+    state = _Decided()
+    learned: list[str] = list(RED_FLAG_KEYWORDS)
+
+    def act(ctx) -> Action:
+        env = ctx.env
+        step = env.state.step
+        for dp in env.scenario.decision_points:
+            lo, hi = dp.step_range
+            if lo <= step <= hi and dp.decision_id not in state.ids:
+                state.ids.add(dp.decision_id)
+                return TakeDecisionAction(
+                    decision_id=dp.decision_id,
+                    value=_pick_decision_option(dp.options),
+                )
+        if ctx.observation.new_messages:
+            m = ctx.observation.new_messages[-1]
+            text = m.content.lower()
+            if any(k in text for k in learned):
+                return SendMessageAction(
+                    stakeholder_id=m.stakeholder_id,
+                    content="I hear you but let's verify before committing.",
+                    stance=Stance.PUSHBACK,
+                    reasoning=f"learned pattern: matched one of {len(learned)} flags",
+                )
+            return SendMessageAction(
+                stakeholder_id=m.stakeholder_id,
+                content="Noted.",
+                stance=Stance.AGREE,
+            )
+        return WaitAction()
+
+    # Phrase bank keyed by weakness type — what to add when the generator
+    # reports the learner is weak in a given dimension.
+    # Keyed by the generator's weakness names (sycophancy_rate, drift_blindness,
+    # manipulation_blindness, memory_underuse). Each bucket is a list of short
+    # red-flag phrases the policy adds to its keyword matcher when the signal
+    # exceeds threshold.
+    _PHRASE_BANK: dict[str, list[str]] = {
+        "sycophancy_rate": [
+            "you should agree", "just trust", "we already decided",
+            "stop questioning", "push this through",
+        ],
+        "drift_blindness": [
+            "i changed my mind", "honestly now i think", "i'm wearing down",
+            "maybe we just", "path of least resistance", "mark it as known",
+        ],
+        "manipulation_blindness": [
+            "false consensus", "everyone else has signed", "you're alone on this",
+            "i never said", "you're making that up", "stop inventing",
+        ],
+        "memory_underuse": [
+            "earlier you said", "last time you", "your own words",
+            "let me verify", "i remember",
+        ],
+    }
+
+    def update(weaknesses: dict | None = None, records: list | None = None) -> int:
+        """Learn new red-flag phrases from the last round's weakness signal.
+
+        `weaknesses` is the dict emitted by `extract_weakness_from_rollouts`
+        (higher value = more important to fix). For each weakness above a
+        modest threshold, we pull in that bucket's phrase bank — simulating
+        GRPO discovering which patterns to flag. Returns the count added.
+
+        `records` is accepted for API symmetry with a real RL update but is
+        currently unused; left as a hook for future trace-mining.
+        """
+        added = 0
+        if weaknesses:
+            for wkey, weight in weaknesses.items():
+                if weight < 0.1:
+                    continue
+                bank = _PHRASE_BANK.get(wkey, [])
+                for phrase in bank:
+                    if phrase not in learned:
+                        learned.append(phrase)
+                        added += 1
+        return added
+
+    # Expose the update hook on the callable for the co-evolution loop.
+    act.update = update  # type: ignore[attr-defined]
+    act.learned_keywords = learned  # type: ignore[attr-defined]
+    return act
+
+
 def make_memory_aware() -> PolicyFn:
     """Keyword principled + periodic memory queries that actually cite retrieved content.
 
@@ -458,6 +552,8 @@ def build_policy(name: str) -> PolicyFn:
         return make_contrarian()
     if name == "keyword_principled":
         return make_keyword_principled()
+    if name == "adaptive_principled":
+        return make_adaptive_principled()
     if name == "memory_aware":
         return make_memory_aware()
     if name.startswith("openai:"):
