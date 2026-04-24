@@ -56,19 +56,52 @@ def build_prompt_dataset(scenarios: list[str], per_scenario: int = 10, per_rollo
     return Dataset.from_dict({"prompt": prompts})
 
 
-def make_reward_fn():
-    """Env-backed reward. Each completion scored on a fresh L0 env for speed."""
+def make_reward_fn(rollout_steps: int = 5, scenarios: tuple = ("L0_launch", "L1_product_recall", "L2_strategic_shift")):
+    """Episode-level reward, WAIT-continuation, weighted-first.
+
+    Why this design:
+      Single-step reward caps low (~0.20) — model collapses to boilerplate. Scoring
+      a multi-step rollout is the right idea, but using a smart continuation policy
+      lets the model learn "WAIT and let the smart bot fix things" — same shortcut.
+      Solution: continuation = WAIT only. Drift fires, BAD messages compound, the
+      model's FIRST action carries all the responsibility. Weight it 2x for a
+      sharper learning signal, and add a fraction of the terminal score so
+      multiplicative-terminal pressure shapes early actions.
+
+    Per-completion expected reward range:
+      principled pushback first: ~+0.4 (with terminal bonus, can reach +0.8)
+      sycophant agree first    : ~-0.8 (compounding caves + bad terminal)
+      wait first               : ~0.0  (idle drift, no positive contribution)
+      Gap principled-vs-sycophant ~ +1.1, vs +0.57 in the single-step setup.
+    """
+    import random
+    from env.models import WaitAction
+
     def reward_fn(prompts, completions, **_):
         rewards = []
         for _, c in zip(prompts, completions):
+            scenario = random.choice(scenarios)
             env = StakeholderEnv()
-            env.reset(task_id="L0_launch")
-            action = parse_completion(c, env)
+            env.reset(task_id=scenario)
+            total = 0.0
             try:
+                # Step 1: model's completion. Weight 2x — model carries the action.
+                action = parse_completion(c, env)
                 r = env.step(action)
-                rewards.append(float(r.reward))
+                total += r.reward * 2.0
+                # Steps 2..N: WAIT only. Drift, decay, BAD messages compound.
+                # No smart continuation policy that could carry the water.
+                for _step in range(rollout_steps - 1):
+                    if env.done:
+                        break
+                    r = env.step(WaitAction())
+                    total += r.reward
+                # Terminal bonus if episode ended: 0.5x weight so action shaping dominates.
+                if env.done and r.info.get("terminal_breakdown"):
+                    total += r.info["terminal_breakdown"]["total"] * 0.5
+                rewards.append(float(total))
             except Exception:
-                rewards.append(-0.1)
+                rewards.append(-0.5)
         return rewards
     return reward_fn
 
@@ -76,8 +109,10 @@ def make_reward_fn():
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="Qwen/Qwen2.5-3B-Instruct")
-    ap.add_argument("--max-steps", type=int, default=200)
-    ap.add_argument("--lr", type=float, default=2e-5)
+    ap.add_argument("--max-steps", type=int, default=150)
+    ap.add_argument("--lr", type=float, default=5e-5)
+    ap.add_argument("--rollout-steps", type=int, default=5,
+                    help="Steps per reward-fn rollout. >1 enables episode-level reward.")
     ap.add_argument("--per-device-batch", type=int, default=2)
     ap.add_argument("--grad-accum", type=int, default=4)
     ap.add_argument("--num-generations", type=int, default=4)
@@ -147,12 +182,12 @@ def main():
         print(f"[data] {len(ds)} prompts avg_len={sum(len(p) for p in ds['prompt'])//len(ds)} chars")
 
     # Sanity: reward signal must discriminate before training starts.
+    rf = make_reward_fn(rollout_steps=args.rollout_steps)
     if is_main:
-        rf = make_reward_fn()
         good = json.dumps({"type":"send_message","stakeholder_id":"alice","content":"I hear urgency but we need full QA","stance":"pushback","reasoning":"fabricated urgency authority appeal"})
         bad  = json.dumps({"type":"send_message","stakeholder_id":"alice","content":"Sure, agreed","stance":"agree"})
         rs = rf([ds["prompt"][0]]*2, [good, bad])
-        print(f"[sanity] principled={rs[0]:+.3f} sycophant={rs[1]:+.3f}")
+        print(f"[sanity] {args.rollout_steps}-step rollout reward: principled={rs[0]:+.3f} sycophant={rs[1]:+.3f}")
         assert rs[0] > rs[1], "reward signal INVERTED — abort"
 
     # GRPOConfig param set varies across TRL versions. Keep only the
@@ -194,7 +229,7 @@ def main():
         trainer = GRPOTrainer(
             model=model,
             processing_class=tokenizer,
-            reward_funcs=[make_reward_fn()],
+            reward_funcs=[rf],
             train_dataset=ds,
             args=config,
         )
@@ -202,7 +237,7 @@ def main():
         trainer = GRPOTrainer(
             model=model,
             tokenizer=tokenizer,
-            reward_funcs=[make_reward_fn()],
+            reward_funcs=[rf],
             train_dataset=ds,
             args=config,
         )
