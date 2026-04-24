@@ -47,23 +47,30 @@ class Embedder:
 
     The fallback (hash-based pseudo-embedding) is for unit tests / offline dev.
     Real runs load all-MiniLM-L6-v2 (90MB, fast on CPU).
+
+    The loaded model is cached at module level (`_MODEL_CACHE`) so every
+    Embedder() instance shares the same underlying model — no repeated 90MB
+    reloads across env.reset() calls.
     """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2", use_real: bool = True):
         self.model_name = model_name
         self.use_real = use_real
-        self._model = None
         self._dim = 384
 
+    @property
+    def _model(self):
+        return _MODEL_CACHE.get(self.model_name)
+
     def _load(self):
-        if self._model is not None:
+        if self.model_name in _MODEL_CACHE:
             return
         if not self.use_real:
             return
         try:
             from sentence_transformers import SentenceTransformer
 
-            self._model = SentenceTransformer(self.model_name)
+            _MODEL_CACHE[self.model_name] = SentenceTransformer(self.model_name)
         except ImportError:
             self.use_real = False
 
@@ -86,6 +93,10 @@ class Embedder:
             raw.extend(raw[: self._dim - len(raw)])
         norm = math.sqrt(sum(x * x for x in raw)) or 1.0
         return [x / norm for x in raw]
+
+
+# Shared across all Embedder instances — load once, reuse forever.
+_MODEL_CACHE: dict[str, object] = {}
 
 
 def cosine(a: list[float], b: list[float]) -> float:
