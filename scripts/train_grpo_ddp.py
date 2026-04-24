@@ -189,13 +189,23 @@ def main():
         return ex
     ds = ds.map(truncate_prompt)
 
-    trainer = GRPOTrainer(
-        model=model,
-        tokenizer=tokenizer,
-        reward_funcs=[make_reward_fn()],
-        train_dataset=ds,
-        args=config,
-    )
+    # TRL renamed `tokenizer` -> `processing_class` around 0.12. Handle both.
+    try:
+        trainer = GRPOTrainer(
+            model=model,
+            processing_class=tokenizer,
+            reward_funcs=[make_reward_fn()],
+            train_dataset=ds,
+            args=config,
+        )
+    except TypeError:
+        trainer = GRPOTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            reward_funcs=[make_reward_fn()],
+            train_dataset=ds,
+            args=config,
+        )
     trainer.train()
 
     # Save LoRA adapters only. Main process only to avoid clobber.
