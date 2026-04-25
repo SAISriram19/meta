@@ -109,6 +109,12 @@ class StakeholderEnv:
     def register_scenario(self, scenario: Scenario):
         self.scenarios[scenario.scenario_id] = scenario
 
+    def set_adversary_driver(self, driver) -> None:
+        """Swap the env's adversary driver (e.g. install a trained LLM adversary
+        after round-2 of co-evolution). Must be called AFTER reset()."""
+        if self.pool is not None:
+            self.pool.set_adversary_driver(driver)
+
     def list_tasks(self) -> list[dict[str, Any]]:
         return [
             {

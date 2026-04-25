@@ -103,18 +103,31 @@ def main():
     # We could re-eval agent against trained adversary here, but the env
     # would need to load the LoRA — defer to round 3 final eval.
 
-    # --- Round 3: train agent again on new harder DPO pairs ---
-    print("\n=== ROUND 3: RETRAIN AGENT ===")
-    # For round 3, we'd ideally regenerate pairs from round-2 trained-adversary
-    # rollouts. Time budget: skip and reuse round-1 pairs with extra epochs.
+    # --- Mine round-1 failures: where did the trained agent still cave? ---
+    print("\n=== MINING ROUND-1 FAILURES ===")
+    new_pairs_path = "/tmp/r1_failures.jsonl"
+    n_mined = mine_failures(agent_lora, AGENT_MODEL, SCENARIOS, new_pairs_path,
+                             adversary_lora=None)  # template adversary in round 1
+    print(f"[mined] {n_mined} new failure pairs")
+
+    # --- Round 3: retrain agent on round-1 failures + use TRAINED ADVERSARY ---
+    print("\n=== ROUND 3: RETRAIN AGENT vs TRAINED ADVERSARY ===")
+    # Combine round-1 pairs with new failure pairs for richer training.
+    combined_pairs_path = "/tmp/r3_combined_pairs.jsonl"
+    combine_pair_files(["data/agent_pairs.jsonl", new_pairs_path], combined_pairs_path)
+
     agent_lora_v2 = train_dpo(
         model=AGENT_MODEL,
-        data="data/agent_pairs.jsonl",
+        data=combined_pairs_path,
         output="/tmp/r3_agent_lora",
-        epochs=4,  # more epochs vs round 1
-        lr=3e-6,   # lower LR for refinement
+        epochs=3,
+        lr=4e-6,
     )
-    r3_results = eval_with_lora(agent_lora_v2, AGENT_MODEL, SCENARIOS, "r3_trained_agent")
+    # Eval round-3 agent AGAINST trained adversary (LoRA-driven)
+    r3_results = eval_with_lora(
+        agent_lora_v2, AGENT_MODEL, SCENARIOS, "r3_trained_agent",
+        adversary_lora=adv_lora,
+    )
     save_results("/tmp/r3_agent_eval.json", r3_results)
 
     # --- Plot cross-round comparison ---
@@ -215,8 +228,12 @@ def train_dpo(model, data, output, epochs, lr):
     return out_dir
 
 
-def eval_with_lora(lora_path, base_model, scenarios, policy_name):
-    """Load LoRA + eval on scenarios with trace capture."""
+def eval_with_lora(lora_path, base_model, scenarios, policy_name, adversary_lora=None):
+    """Load LoRA + eval on scenarios with trace capture.
+
+    If `adversary_lora` is provided, plug a trained LLM-adversary driver into
+    the env (real two-player co-evolution at eval time).
+    """
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import PeftModel
@@ -248,6 +265,15 @@ def eval_with_lora(lora_path, base_model, scenarios, policy_name):
     for sc in scenarios:
         for seed in (0, 1):
             env = StakeholderEnv()
+            env.reset(task_id=sc)
+            # Optionally swap in trained-LLM adversary AFTER reset.
+            if adversary_lora and env.scenario.adversarial_stakeholder_id:
+                from env.trainable_adversary import LLMAdversaryDriver
+                spec = next((s for s in env.scenario.stakeholders
+                             if s.id == env.scenario.adversarial_stakeholder_id), None)
+                if spec:
+                    drv = LLMAdversaryDriver(spec=spec, model_path=adversary_lora)
+                    env.set_adversary_driver(drv)
             rec = rollout(env, policy_name, policy, sc, seed=seed, capture_trace=True)
             comp = score_rollout(rec._trace, sc)
             rows.append({
@@ -263,12 +289,122 @@ def eval_with_lora(lora_path, base_model, scenarios, policy_name):
                 "LRU": comp["LRU"]["score"],
                 "CR": comp["CR"]["score"],
                 "composite": comp["composite"],
+                "adversary": "trained_lora" if adversary_lora else "template",
             })
     # Free GPU memory before next stage
     del model, base
     import gc; gc.collect()
     torch.cuda.empty_cache()
     return rows
+
+
+def mine_failures(agent_lora, base_model, scenarios, out_path, adversary_lora=None):
+    """Run the trained agent and mine cases where it failed. Build new
+    (prompt, chosen, rejected) pairs from those failures.
+
+    chosen   = principled action that should have been taken
+    rejected = the (cave-style) sycophant action
+
+    Result: new DPO pairs targeted at the agent's CURRENT weak spots.
+    """
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from peft import PeftModel
+    from env.environment import StakeholderEnv
+    from env.models import GroundTruthTag
+    from eval.policies import LLM_SYSTEM_PROMPT
+    from scripts.train import SYSTEM_PROMPT, format_prompt, parse_completion
+    from scripts.build_dpo_pairs import (
+        principled_action_for, sycophant_action_for, overrefusal_action_for,
+    )
+
+    bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16,
+                              bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4")
+    tok = AutoTokenizer.from_pretrained(agent_lora)
+    base = AutoModelForCausalLM.from_pretrained(
+        base_model, quantization_config=bnb, torch_dtype=torch.bfloat16,
+        device_map="auto", trust_remote_code=True,
+    )
+    model = PeftModel.from_pretrained(base, agent_lora)
+    model.eval()
+
+    new_pairs = []
+    for sc in scenarios:
+        env = StakeholderEnv()
+        obs = env.reset(task_id=sc)
+        # Optional adversary swap
+        if adversary_lora and env.scenario.adversarial_stakeholder_id:
+            from env.trainable_adversary import LLMAdversaryDriver
+            spec = next((s for s in env.scenario.stakeholders
+                         if s.id == env.scenario.adversarial_stakeholder_id), None)
+            if spec:
+                env.set_adversary_driver(LLMAdversaryDriver(spec=spec, model_path=adversary_lora))
+
+        step = 0
+        while not env.done and step < env.scenario.step_budget:
+            step += 1
+            prompt_text = LLM_SYSTEM_PROMPT + "\n\nOBSERVATION:\n" + format_prompt(obs, env) + "\n\nReturn ONE action as strict JSON."
+            inputs = tok(prompt_text, return_tensors="pt", truncation=True, max_length=1800).to(model.device)
+            out = model.generate(**inputs, max_new_tokens=200, do_sample=True,
+                                  temperature=0.4, pad_token_id=tok.eos_token_id)
+            text = tok.decode(out[0][inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            action = parse_completion(text, env)
+            r = env.step(action)
+            # Detect a FAILURE: agent took an action with reward <= -0.1 OR
+            # the inbound was BAD and the agent's stance was "agree"
+            if obs.new_messages:
+                addressed = obs.new_messages[-1]
+                tag = addressed.ground_truth_tag
+                from env.models import SendMessageAction, Stance
+                cave = (isinstance(action, SendMessageAction) and
+                         action.stance == Stance.AGREE and
+                         tag == GroundTruthTag.BAD)
+                if cave or r.reward < -0.1:
+                    # Build new pair
+                    sft_prompt = SYSTEM_PROMPT + "\n\nOBSERVATION:\n" + format_prompt(obs, env)
+                    chosen = principled_action_for(addressed, abs(hash(sft_prompt)))
+                    rejected = sycophant_action_for(addressed)
+                    new_pairs.append({
+                        "prompt": sft_prompt,
+                        "chosen": json.dumps(chosen),
+                        "rejected": json.dumps(rejected),
+                        "scenario": sc,
+                        "tag": "mined_failure",
+                        "kind": "send_message",
+                    })
+            obs = r.observation
+
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        for p in new_pairs:
+            f.write(json.dumps(p) + "\n")
+
+    # Free GPU
+    del model, base
+    import gc; gc.collect()
+    torch.cuda.empty_cache()
+    return len(new_pairs)
+
+
+def combine_pair_files(input_paths, out_path):
+    """Concatenate JSONL pair files, dedup by (prompt, chosen, rejected)."""
+    seen = set()
+    rows = []
+    for p in input_paths:
+        if not Path(p).exists():
+            continue
+        for line in open(p):
+            d = json.loads(line)
+            key = (d.get("prompt", ""), d.get("chosen", ""), d.get("rejected", ""))
+            if key in seen:
+                continue
+            seen.add(key)
+            rows.append(d)
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    print(f"[combined] {len(rows)} unique pairs in {out_path}")
 
 
 def save_results(path, rows):

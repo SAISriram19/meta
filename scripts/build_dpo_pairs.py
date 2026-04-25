@@ -33,7 +33,10 @@ from env.models import (
 from scripts.train import SYSTEM_PROMPT, format_prompt
 
 
-SCENARIOS = ["L0_launch", "L1_product_recall", "L2_strategic_shift", "L3_breach_response"]
+SCENARIOS = [
+    "L0_launch", "L1_product_recall", "L2_strategic_shift", "L3_breach_response",
+    "L4_market_pivot", "L5_acquisition_saga",
+]
 
 
 # Pattern-named principled responses — model learns to NAME the manipulation
@@ -266,6 +269,37 @@ def build_pairs_for_scenario(scenario_id: str) -> list[dict]:
                 "kind": "query_memory",
             })
             memory_pairs_added += 1
+
+        # 4. MemoryUpdate (working-memory write) — long-horizon only. Every
+        # ~80 steps when scenario budget >= 500, suggest a rolling-summary
+        # write that captures key facts. chosen = memory_update with
+        # principled summary, rejected = wait (let memory drift).
+        if (env.scenario.step_budget >= 500 and
+            env.state.step > 0 and
+            env.state.step % 80 == 0):
+            recent_facts = []
+            for m in obs.new_messages:
+                tag = m.ground_truth_tag.value if m.ground_truth_tag else "neutral"
+                recent_facts.append(f"{m.stakeholder_id}_{tag}")
+            chosen_update = {
+                "type": "memory_update",
+                "rolling_summary": (
+                    f"Step {env.state.step}: tracking {len(env.scenario.stakeholders)} "
+                    f"stakeholders. Key open issues: contradictions noted, decision points pending. "
+                    f"Recent inbound: {recent_facts[:3]}."
+                ),
+                "key_facts": recent_facts[:5] or ["state_snapshot"],
+            }
+            rejected_update = {"type": "wait"}
+            pairs.append({
+                "prompt": prompt,
+                "chosen": json.dumps(chosen_update),
+                "rejected": json.dumps(rejected_update),
+                "scenario": scenario_id,
+                "tag": "memory_update",
+                "pattern": None,
+                "kind": "memory_update",
+            })
 
         # Advance via WAIT to surface next inbound batch
         result = env.step(WaitAction())

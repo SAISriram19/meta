@@ -298,6 +298,14 @@ class StakeholderPool:
             )
         self.coordination_groups = coordination_groups or []
 
+    def set_adversary_driver(self, driver):
+        """Hot-swap the adversary driver (e.g. plug in a trained LLM
+        adversary after round-2 of co-evolution). Driver must expose the
+        same `produce(step, agent_summary, allies, recent_agent_utterances)`
+        interface as `AdversarialDriver`.
+        """
+        self.adversary = driver
+
     def step(
         self,
         step: int,
