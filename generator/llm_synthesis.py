@@ -98,7 +98,11 @@ def synthesize_scenario(
     )
 
     text = None
-    if provider in ("auto", "nvidia") and os.getenv("NVIDIA_API_KEY"):
+    # HF Inference Providers preferred — single HF_TOKEN routes to Together/
+    # Cerebras/Fireworks/Replicate. Uses hackathon $30 credit directly.
+    if provider in ("auto", "hf") and os.getenv("HF_TOKEN"):
+        text = _call_hf(prompt)
+    if text is None and provider in ("auto", "nvidia") and os.getenv("NVIDIA_API_KEY"):
         text = _call_nvidia(prompt)
     if text is None and provider in ("auto", "openai") and os.getenv("OPENAI_API_KEY"):
         text = _call_openai(prompt)
@@ -109,6 +113,32 @@ def synthesize_scenario(
         return None
 
     return _parse_yaml(text)
+
+
+def _call_hf(prompt: str) -> str | None:
+    """HF Inference Providers — single HF token routes to whichever provider
+    serves the model (Together / Cerebras / Fireworks / Replicate / etc).
+
+    Default model: meta-llama/Llama-3.3-70B-Instruct. Override via
+    HF_SYNTH_MODEL env var.
+    """
+    try:
+        from huggingface_hub import InferenceClient
+        model = os.environ.get("HF_SYNTH_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
+        client = InferenceClient(
+            provider=os.environ.get("HF_SYNTH_PROVIDER", "auto"),
+            api_key=os.environ["HF_TOKEN"],
+        )
+        resp = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2500,
+            temperature=0.7,
+        )
+        return resp.choices[0].message.content
+    except Exception as e:
+        print(f"[llm-synth] HF Inference Providers call failed: {e}")
+        return None
 
 
 def _call_nvidia(prompt: str) -> str | None:
