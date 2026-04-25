@@ -1,4 +1,4 @@
-"""GRPO training on the Stakeholder Management Gym.
+"""GRPO training on the Meta.
 
 This script is the starter for on-site training. It:
     1. Loads a small policy model via Unsloth (LoRA, 4-bit) — Colab-friendly.
@@ -15,7 +15,7 @@ References:
 Colab quickstart:
     !pip install unsloth trl datasets networkx pydantic pyyaml
     !git clone <this repo>
-    %cd stakeholder-gym
+    %cd meta
     !python scripts/train.py --model Qwen/Qwen2.5-0.5B-Instruct --episodes 64 --max-steps 12
 
 Notes:

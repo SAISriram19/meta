@@ -6,7 +6,7 @@
 
 ## Slide 1 — Title (5s)
 
-**Stakeholder Management Gym**
+**Meta**
 *Training LLMs to stop being yes-men at long horizons.*
 
 OpenEnv Round 2. Meta × PyTorch × Hugging Face.

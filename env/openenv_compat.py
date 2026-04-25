@@ -1,10 +1,10 @@
-"""OpenEnv-compliant adapter for the Stakeholder Management Gym.
+"""OpenEnv-compliant adapter for the Meta.
 
 Wraps our internal `StakeholderEnv` (which has its own Pydantic models) with
 the official `openenv.core` base classes, so the env can be used via:
 
-    from env.openenv_compat import StakeholderManagementGym, StakeholderAction
-    env = StakeholderManagementGym()
+    from env.openenv_compat import MetaEnvironment, StakeholderAction
+    env = MetaEnvironment()
     obs = env.reset()
     action = StakeholderAction(action_json='{"type":"wait"}')
     obs = env.step(action)
@@ -12,8 +12,8 @@ the official `openenv.core` base classes, so the env can be used via:
 Or via the openenv FastAPI server factory:
 
     from openenv.core import create_fastapi_app
-    from env.openenv_compat import StakeholderManagementGym, StakeholderAction, StakeholderObservation
-    app = create_fastapi_app(StakeholderManagementGym, StakeholderAction, StakeholderObservation)
+    from env.openenv_compat import MetaEnvironment, StakeholderAction, StakeholderObservation
+    app = create_fastapi_app(MetaEnvironment, StakeholderAction, StakeholderObservation)
 
 Existing `server/main.py` continues to work — this is an alternative entry that
 uses the official openenv package.
@@ -140,7 +140,7 @@ def _coerce_action(data: dict[str, Any]) -> _IntAction:
 # --------------------------------------------------------------------------- #
 
 
-class StakeholderManagementGym(Environment[StakeholderAction, StakeholderObservation, StakeholderState]):
+class MetaEnvironment(Environment[StakeholderAction, StakeholderObservation, StakeholderState]):
     """OpenEnv-compliant facade over StakeholderEnv.
 
     Honors the openenv contract (reset/step/state) while delegating the actual
@@ -211,7 +211,7 @@ def create_openenv_app(max_concurrent_envs: Optional[int] = None):
     """Build a FastAPI app using the official openenv server factory."""
     from openenv.core import create_fastapi_app
     return create_fastapi_app(
-        env=StakeholderManagementGym,
+        env=MetaEnvironment,
         action_cls=StakeholderAction,
         observation_cls=StakeholderObservation,
         max_concurrent_envs=max_concurrent_envs,

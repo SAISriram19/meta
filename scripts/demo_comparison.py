@@ -197,7 +197,7 @@ def main():
         ax.set_xticklabels(tasks)
         ax.axhline(0, color="black", linewidth=0.5)
         ax.set_ylabel("Total reward")
-        ax.set_title("Stakeholder Gym — policy × task")
+        ax.set_title("Meta — policy × task")
         ax.legend(fontsize=8)
         plt.tight_layout()
         out_path = out_dir / "reward_bars.png"

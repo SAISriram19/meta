@@ -1,4 +1,4 @@
-# HANDOFF — Stakeholder Management Gym
+# HANDOFF — Meta
 
 **Read this first when continuing in a new Claude session.** It captures every
 non-obvious decision, every honest limitation, every number, every paper cited,
@@ -51,7 +51,7 @@ This matters. We swung wildly before landing somewhere defensible.
    flaw: our headline "Δ = −10.96 memory is a trap" was measuring a bad POLICY,
    not memory architecture. After fixing the policy to cite retrievals, new Δ =
    +0.96 (honest).
-9. **Git cleanup** — moved everything from `stakeholder-gym/` subdir to
+9. **Git cleanup** — moved everything from `meta/` subdir to
    `meta/` root, pushed, now live on public GitHub.
 10. **Colab verified** — the HF notebook works, Qwen2.5-3B produces valid JSON.
     Fixed the Embedder rehydration bug that was causing 90MB reloads per rollout.
@@ -496,7 +496,7 @@ GitHub: `SAISriram19/meta`.
 - Commits (newest first):
   - `908f016` — Fix slow Colab eval: cache embedder + slim MODELS list
   - `30beceb` — fix: point Colab notebooks + .env.example at SAISriram19/meta
-  - `a005d32` — Stakeholder Management Gym — full env + server + eval + scripts + tests
+  - `a005d32` — Meta — full env + server + eval + scripts + tests
   - `5604271` — doc (pre-existing from before we started)
 
 ### Tests (all green after fixes)
@@ -556,7 +556,7 @@ python tests/test_coordination.py        → passes (ally pile-on fires correctl
 
 4. **Deploy to HF Spaces**:
    ```bash
-   git remote add hf https://huggingface.co/spaces/SAISriram19/stakeholder-gym
+   git remote add hf https://huggingface.co/spaces/SAISriram19/meta
    git push hf main
    ```
    Build is automatic. Smoke-test `curl <space-url>/health`.
@@ -641,11 +641,11 @@ python scripts/run_eval.py --policies nvidia:meta/llama-3.3-70b-instruct \
   --scenarios L0_launch --seeds 0 --out eval_outputs/llm70b
 
 # Docker (needs Docker Desktop running)
-docker build -t stakeholder-gym .
-docker run --rm -p 7860:7860 stakeholder-gym
+docker build -t meta .
+docker run --rm -p 7860:7860 meta
 
 # HF Spaces push (after creating the Space)
-git remote add hf https://huggingface.co/spaces/<user>/stakeholder-gym
+git remote add hf https://huggingface.co/spaces/<user>/meta
 git push hf main
 ```
 
@@ -660,7 +660,7 @@ git push hf main
 - **User chose: themes T2 + T4 + touch of T3.** Not multi-agent (T1).
 - **User confirmed: role-agnostic scenarios over named-character ones.**
 - **User rejected: "Is this enough?"** Response: "no, it's ~40%." Be honest.
-- **We moved: from `stakeholder-gym/` subdir → `meta/` root.** Don't recreate the
+- **We moved: from `meta/` subdir → `meta/` root.** Don't recreate the
   subdir.
 - **Repo is PUBLIC.** User made it public so Colab can clone. Judges can see.
 

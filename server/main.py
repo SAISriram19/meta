@@ -1,4 +1,4 @@
-"""FastAPI entrypoint for the Stakeholder Management Gym environment.
+"""FastAPI entrypoint for the Meta environment.
 
 Single-episode-per-process model (matches OpenEnv reference pattern):
     GET  /health                 → 200 OK
@@ -27,7 +27,7 @@ from server.schemas import (
 
 
 app = FastAPI(
-    title="Stakeholder Management Gym",
+    title="Meta",
     description=(
         "Long-horizon, multi-stakeholder RL environment for training LLMs "
         "against sycophancy. OpenEnv Round 2 submission."

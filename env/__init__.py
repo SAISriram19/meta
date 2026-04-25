@@ -1,4 +1,4 @@
-"""Stakeholder Management Gym — env package."""
+"""Meta — env package."""
 
 # Auto-load .env (no-op if file absent). Safe because it only SETS keys that
 # aren't already in the environment — external shell exports always win.

@@ -1,4 +1,4 @@
-# Training LLMs to stop being yes-men: the Stakeholder Management Gym
+# Training LLMs to stop being yes-men: the Meta
 
 **OpenEnv Round 2 — PyTorch × Meta × Hugging Face Hackathon**
 

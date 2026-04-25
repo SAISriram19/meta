@@ -1,0 +1,670 @@
+﻿=== PAGE 2 ===
+Abhimanyu Saxena
+Welcome
+Co-Founder, Scaler
+
+=== PAGE 3 ===
+Agenda: Day-1
+11:00 AM
+1:00 PM
+3:30 - 4:30        
+PM
+5:00 - 5:30        
+PM
+8:00 - 10:00        
+9:30 PM
+2:00 AM
+PM
+  Hacking Begins
+  ≡ƒôìAll Classrooms
+  Mentor Round 1
+  ≡ƒôìAll Classrooms
+  Mentor Round 2
+  ≡ƒôìAll Classrooms
+          Midnight Snacks
+  ≡ƒôìFood Zone on All 
+Floors
+                 Dinner
+  ≡ƒôìFood Zone on All 
+Floors
+           Talk & High Tea 
+             ≡ƒôìMain Stage
+                  Lunch 
+  ≡ƒôìFood Zone on All Floors
+
+=== PAGE 4 ===
+Agenda: Day-2
+10:00 AM - 
+12:00 PM
+3:30 - 4:30        
+PM
+3:00 PM        
+5:00 PM        
+           Breakfast
+      ≡ƒôìFood Zones 
+ΓÅ░  5-Hour Reminder: 
+Submission Deadline 
+    ≡ƒôìAll Classrooms
+          Closing Remarks
+              ≡ƒôìMain Stage
+     Submission Deadline
+                   Lunch  
+   ≡ƒôìFood Zone on All Floors
+     Mentor Round 3 (Final) 
+          ≡ƒôìAll Classrooms
+8:00 AM
+12:00 PM
+2:00 PM
+5:15 PM        
+8:00 PM        
+5:30-8:00        
+PM
+ΓÅ░  2-Hour Reminder: 
+Submission Deadline 
+    ≡ƒôìAll Classrooms
+     ≡ƒÅü  Event Concludes
+     Open Networking
+     ≡ƒôìNear Main Stage
+
+=== PAGE 5 ===
+Results Announcement
+ΓùÅTop-100 finalist: Friday, May 1st
+ΓùÅWinners livestream: Friday, May 8th
+
+=== PAGE 6 ===
+Cursor AI & HF Credits
+Get your credits for Cursor AI and Hugging Face jobs as early as possible
+Cursor AI credit: Each participant is eligible to get Cursor credits. Participants can visit 
+Scaler Hackathon dashboard to avail their credits - https://tinyurl.com/sclr-openenv-dashboard 
+Hugging Face credits ΓåÆ You can avail HF credits by accessing the following link 
+($30 credit per person):
+https://huggingface.co/coupons/claim/hf-openenv-community
+The same links would be shared to you in the #on-campus-discord channels to access.
+
+=== PAGE 7 ===
+Meet your Mentors 
+     Yash Khare
+Sanyam Bhutani
+Nilesh Pandey
+ Adithya S Kolavi
+Adarsh Shirawalmath
+Arkadip Maitra
+Aashay Sachdeva
+Deepa Dhevannan
+Soumik Rakhsit
+Partner Engineer, META
+Partner Engineer, META
+Partner Engineer, META
+        Engineer, Hugging Face
+ML Engineer, Hugging Face
+ML Engineer, Red Hat
+Founding Team, Sarvam
+Gen AI Solution Architect
+ML Engineer, Zomato
+
+=== PAGE 8 ===
+Meet your Mentors 
+  Parshant Sharma
+Ayush Satyam
+Ben Burtenshaw
+Alireza Shamsoshoara
+ML Engineer, Red Hat
+ ML Engineer, Red Hat
+         Community Education AI, 
+                    Hugging Face 
+              (Remotely available) 
+                PyTorch, Meta
+           (Remotely available)
+
+=== PAGE 9 ===
+Guidelines for Discord
+Given that global tech leaders and executives are present in the community, we want to 
+ensure the highest level of professionalism and decorum is maintained in the 
+community. We also want to ensure that the incredible talent in this community is 
+represented in the best possible way.
+To support this, we have outlined a set of DoΓÇÖs and DonΓÇÖts, and have shared in the 
+community, make sure to read and adhere to them.
+Important: Failure to follow these guidelines will lead to strict action, and may impact 
+your participation in the hackathon.
+
+=== PAGE 10 ===
+Sanyam Bhutani
+Partner Engineer @ 
+Welcome
+
+=== PAGE 11 ===
+Γ¡É OpenEnv
+https://tinyurl.com/openenv-scaler
+
+=== PAGE 12 ===
+ΓùÅPyTorch Foundation Intro
+ΓùÅHackathon Themes
+ΓùÅSubmission and Judging Rules
+ΓùÅRL 101 + OpenEnv Recap
+ΓùÅBest Practises
+ΓùÅQ&A
+Agenda
+
+=== PAGE 13 ===
+PYTORCH 2026
+A bit about PyTorch Foundation
+Visit: pytorch.org/join
+
+=== PAGE 14 ===
+PYTORCH 2025  
+Mission
+The PyTorch Foundation is committed 
+to democratizing and accelerating 
+the widespread adoption of accessible, 
+high-impact AI technologies by 
+cultivating a robust ecosystem of 
+open-source, vendor-neutral projects 
+spanning the entire AI lifecycle 
+ΓÇöempowering researchers, 
+developers, and organizations of all 
+sizes to innovate and deploy AI 
+solutions with confidence.
+
+=== PAGE 15 ===
+PYTORCH 2025  
+Hosted projects
+
+=== PAGE 16 ===
+PYTORCH 2026  
+The Hackathon
+Goals:
+-
+Learn RL - now is a great time!
+-
+Hack and create cool environments you can use to add skills to models
+-
+Showcase your work on the Hugging Face Hub
+-
+Have fun!!
+https://github.com/meta-pytorch/OpenEnv
+
+=== PAGE 17 ===
+PYTORCH 2026  
+Self-play negotiation arenas
+Auto-generated math/proof tasks
+Evolving coding competitions
+Adaptive RL curricula
+..
+Self-Improvement
+A Frontier Perspective..
+ 
+(Super) Long-Horizon Planning
+Market simulations
+Compute-allocation negotiations
+Collaborative puzzle worlds
+..
+Multi-agent interactions
+Dynamic browser/API ecosystems
+Enterprise applications
+Scienti∩¼üc work∩¼éow loops (papers ΓåÆ code ΓåÆ 
+experiments)
+..
+World modeling
+Research-planning simulators
+Large-scale codebase refactoring tasks
+Strategic resource management worlds
+..
+Themes
+
+=== PAGE 18 ===
+PYTORCH 2026
+Model Development is 
+Evolving
+
+=== PAGE 19 ===
+PYTORCH 2026  
+Pretraining
+Large-scale text/data
+Self-supervision loss
+SFT
+Human-labeled examples 
+Task-speci∩¼üc tuning
+RLHF
+Human preference data 
+Reward model
+Policy optimization
+RL + Envs
+Agent acts in env 
+Long-horizon rewards 
+Self-generated data 
+Closed-loop learning
+Model Training (and Inference!) is evolving..
+Harness
+Infra & Control Tool & API Integration, Safety, Memory, Observability, etc..
+
+=== PAGE 20 ===
+PYTORCH 2026  
+Environments
+Agent
+LLM + Tools + Memory
+Tool use
+RL Training
+reward / state
+experience
+actions
+
+=== PAGE 21 ===
+PYTORCH 2026
+Now is the time to democratize RL
+
+=== PAGE 22 ===
+PYTORCH 2026
+Hackathon Intro
+
+=== PAGE 23 ===
+Guidelines for Problem Statement
+It is NOT mandatory to choose the same problem statement as Round 1. Only choose the same 
+problem statement if it aligns with the above provided Hackathon themes.
+ΓùÅYou can start working on your problem statement once you have ∩¼ünalized it. Post-training can be 
+done onsite on 25th & 26th when you receive compute credits for HuggingFace.
+ΓùÅBefore the onsite, we suggest you work on building the environment, agent behaviours, reward 
+model and evaluate if your work aligns with the judging criteria given below.
+
+=== PAGE 24 ===
+OpenEnv Hackathon - What Judges Look For
+For the list of themes and example problems, refer to the top sections.
+NOTE: Please remember only one submission per team. If you have multiple ideas, pick the best 
+one and go for it. Please make sure that the URL link of your environment is submitted as judges 
+will pull the environment from the URL to evaluate it. Changes or commits after the submission 
+deadline will not be considered.
+TL;DR
+Build an environment that an LLM could actually be trained on to get measurably better at
+something interesting. Then show that training. Then tell the story.
+A messy but ambitious environment with real training evidence beats a polished but boring one.
+Pick a problem that excites you (that energy comes through in the pitch).
+
+=== PAGE 25 ===
+Judging Criteria
+Criterion: Environment Innovation
+Weight: 40%
+What it means:
+Is the environment novel, creative, or genuinely challenging?
+Does it meaningfully test agent behavior in a way that hasn't 
+been done before?
+Criterion: Storytelling & Presentation
+Weight: 30%
+What it means:
+Can you clearly explain the problem, the environment, and 
+what the agent learned?
+Is the demo engaging and easy to follow for a non-technical 
+audience?
+Criterion: Showing Improvement in Rewards
+Weight: 20%
+What it means:
+Is there observable evidence of training progress? 
+Reward curves, before/after behavior, comparison against a 
+baseline -- anything that proves the agent learned something.
+Criterion: Reward & Training Pipeline
+Weight: 10%
+What it means:
+Is the reward logic coherent? Does the pipeline produce 
+meaningful improvement in the trained
+agent's behavior?
+
+=== PAGE 26 ===
+Minimum Submission Requirements
+NOTE: These are non-negotiable. Submissions missing any of these are at a serious disadvantage.
+ΓùÅUse OpenEnv (latest release). Build on top of the framework; donΓÇÖt reinvent the wheel.
+ΓùÅA working training script using Unsloth or Hugging Face TRL, ideally as a Colab notebook so 
+judges can re-run it.
+ΓùÅEvidence that you actually trained; at minimum, loss and reward plots from a real run.
+ΓùÅA short writeup: a mini-blog on Hugging Face or a < 2 minute video on YouTube explaining what 
+your environment does and what you trained, or a short slide deck of presentation. Please make 
+sure that all materials are linked from your README ∩¼üle so that judges can access them easily.
+ΓùÅPush your environment to a Hugging Face Space so itΓÇÖs discoverable and runnable.
+ΓùÅA README that motivates the problem, explains how the env works, and shows results.
+ΓùÅREADME should have a link to the environment in the Hugging Face Space. It should also 
+have all additional references to other materials (e.g. videos, blog posts, slides, presentations, 
+etc.) that you want to include.
+ΓùÅPlease do not include big video ∩¼üles in your Env submission on HF Hub as we would like to have 
+a small size for each env (Please use url as reference link to additional materials).
+
+=== PAGE 27 ===
+What Makes a Submission Stand Out
+Pick an ambitious, original problem
+The themes (problems) are deliberately open. Use them as launching pads, not boxes. 
+Judges have seen a lot of chess, snake, tic-tac-toe, and grid-world clones. To score well 
+on innovation,
+you need a genuinely fresh angle. Some questions to ask yourself:
+ΓùÅDoes this environment exist to teach an LLM something it currently canΓÇÖt do well?
+ΓùÅIs the domain underexplored in RL/LLM training?
+ΓùÅCould a researcher write a paper about training on this?
+Design a reward signal that actually teaches
+A great environment has a reward function that:
+ΓùÅProvides a rich, informative signal (not just 0/1 at the end)
+ΓùÅCaptures something hard to measure in a clever way
+ΓùÅUses OpenEnvΓÇÖs Rubric system thoughtfully (composable rubrics > monolithic scoring)
+ΓùÅIs hard to game; an agent that exploits the reward without solving the task should not 
+get high scores
+
+=== PAGE 28 ===
+What Makes a Submission Stand Out
+Show real training, end to end
+The bar isnΓÇÖt ΓÇ£training script exists.ΓÇ¥ The bar is ΓÇ£training script runs against the environment, the
+agent learns, and you can show it.ΓÇ¥ Concretely:
+ΓùÅYour training loop should connect to your environment (not a static dataset)
+ΓùÅTrain long enough that the curves mean something
+ΓùÅCompare a trained agent vs. a random/untrained baseline; quantitative and/or qualitative
+ΓùÅInclude the plots and numbers in your README and writeup
+Make your plots readable
+Reviewers spend seconds, not minutes, on each plot. Help them out:
+ΓùÅLabel both axes (e.g. ΓÇ£training stepΓÇ¥ / ΓÇ£episodeΓÇ¥ on x, ΓÇ£rewardΓÇ¥ / ΓÇ£lossΓÇ¥ on y) and include units where they 
+apply
+ΓùÅSave plots as .png or .jpg and commit them to the repo (donΓÇÖt leave them only in a Colab cell or a deleted 
+Wandb run) (if you ran via WANBD, please include the link to that speci∩¼üc run of your plots)
+ΓùÅEmbed the key plots in your README with a one-line caption explaining what each one shows If you have 
+multiple runs (baseline vs. trained, ablations, etc.), put them on the same axes so the comparison is obvious
+
+=== PAGE 29 ===
+What Makes a Submission Stand Out
+Tell a story, not an API doc
+Your README, blog, and pitch should answer:
+1. Problem) what capability gap or interesting domain are you targeting?
+2. Environment) what does the agent see, do, and get rewarded for?
+3. Results) what changed after training? Show it.
+4. Why does it matter) who would care, and why?
+A reviewer should be able to read your README in 3~5 minutes and want to try your
+environment.
+NOTE: If you have a video, HF post, or anything else interesting, please make sure that itΓÇÖs linked
+  from your README.
+
+=== PAGE 30 ===
+What Makes a Submission Stand Out
+Engineer it cleanly (table stakes)
+Engineering quality matters less than ambition, but sloppy work hurts. Make sure you:
+ΓùÅUse OpenEnvΓÇÖs Environment / MCPEnvironment base classes properly
+ΓùÅRespect the client / server separation (clients should never import server internals)
+ΓùÅFollow the standard Gym-style API (reset, step, state)
+ΓùÅHave a valid openenv.yaml manifest
+ΓùÅDonΓÇÖt use reserved tool names (reset, step, state, close) for MCP tools
+Final Note
+Judges are looking for environments that push the frontier of what we can train LLMs to do. Be
+ambitious. Pick a problem you ∩¼ünd genuinely interesting; that almost always produces better
+work than chasing what you think judges want. Good luck.
+
+=== PAGE 34 ===
+RL Recap
+
+=== PAGE 35 ===
+RL Recap
+
+=== PAGE 36 ===
+RL Recap
+
+=== PAGE 37 ===
+RL Recap
+
+=== PAGE 38 ===
+Building Your 
+Environment
+
+=== PAGE 39 ===
+Building Your 
+Environment
+
+=== PAGE 40 ===
+Building Your 
+Environment
+
+=== PAGE 41 ===
+Building Your 
+Environment
+
+=== PAGE 42 ===
+Building Your 
+Environment
+
+=== PAGE 43 ===
+Building Your 
+Environment
+
+=== PAGE 44 ===
+Building Your 
+Environmnt
+
+=== PAGE 45 ===
+Building Your 
+Environmnt
+
+=== PAGE 46 ===
+Building Your 
+Environmnt
+
+=== PAGE 47 ===
+Building Your 
+Environmnt
+
+=== PAGE 48 ===
+Building Your 
+Environmnt
+
+=== PAGE 49 ===
+Deploy with CLI
+Initialize a new environment
+Develop and Deploy to HF Spaces
+
+=== PAGE 50 ===
+Ideas on what to build
+ΓùÅ
+Environments that you want your agent to solve!
+ΓùÅ
+Take inspiration from r/locallama: vendingbench, foodtricksimulater
+ΓùÅ
+Realistic customer engagement (agents simulate frustrated customers)
+ΓùÅ
+Push to Hub and test with Unsloth
+
+=== PAGE 51 ===
+ΓùÅ
+OpenEnv fundamentals, architecture
+ΓùÅ
+Local dev, Docker, and HF Spaces deployment
+ΓùÅ
+OpenEnv in Practice
+ΓùÅ
+Training (TRL & Unsloth)
+ΓùÅ
+How-to-Access-Infrastructure
+
+=== PAGE 52 ===
+ΓùÅ
+OpenEnv fundamentals, architecture
+ΓùÅ
+Local dev, Docker, and HF Spaces deployment
+ΓùÅ
+OpenEnv in Practice
+ΓùÅ
+Training (TRL & Unsloth)
+ΓùÅ
+How-to-Access-Infrastructure
+
+=== PAGE 53 ===
+Every HF Space provides three components:
+
+=== PAGE 54 ===
+1. Server: A running environment endpoint
+Example: Checking if the space is running 
+curl https://openenv-echo-env.hf.space/health 
+# {"status": "healthy"}
+
+=== PAGE 55 ===
+2. Repository: Installable Python package
+
+=== PAGE 56 ===
+3. Registry: Docker container image
+
+=== PAGE 58 ===
+Local Development
+ΓùÅ
+Clone and run the environment 
+locally
+
+=== PAGE 59 ===
+Local Development
+ΓùÅ
+Uvicorn directly in 
+python
+
+=== PAGE 60 ===
+Local Development
+ΓùÅ
+Run the environment locally from the 
+space
+
+=== PAGE 61 ===
+Build Image
+Run Container
+
+=== PAGE 62 ===
+Deploy with CLI
+Initialize a new 
+environment
+Develop and Deploy to HF 
+Spaces
+
+=== PAGE 63 ===
+ΓùÅ
+OpenEnv fundamentals, architecture
+ΓùÅ
+Local dev, Docker, and HF Spaces deployment
+ΓùÅ
+OpenEnv in Practice
+ΓùÅ
+Training (TRL & Unsloth)
+ΓùÅ
+How-to-Access-Infrastructure
+
+=== PAGE 64 ===
+OpenEnv in Practice
+Use uv venv
+Or
+Use conda env
+
+=== PAGE 65 ===
+Initialize an Environment
+
+=== PAGE 66 ===
+Initialize an Environment
+
+=== PAGE 67 ===
+Develop and Push your created environment
+
+=== PAGE 68 ===
+Your Env on HF Spaces
+
+=== PAGE 69 ===
+Your Env on HF Spaces
+
+=== PAGE 70 ===
+Run Locally or Clone the Environment
+
+=== PAGE 72 ===
+ΓùÅ
+OpenEnv fundamentals, architecture
+ΓùÅ
+Local dev, Docker, and HF Spaces deployment
+ΓùÅ
+OpenEnv in Practice
+ΓùÅ
+Training (TRL & Unsloth)
+ΓùÅ
+How-to-Access-Infrastructure
+
+=== PAGE 73 ===
+ΓùÅ
+Training examples:
+ΓùÅ
+Unsloth example (2048):
+ΓùÅ
+Wordle example-trl:
+https://github.com/meta-pytorch/OpenEnv/tree/main/tutorial/examples 
+https://github.com/meta-pytorch/OpenEnv/blob/main/tutorial/examples/unsloth_2048.ipynb 
+https://github.com/meta-pytorch/OpenEnv/blob/main/tutorial/examples/wordle.py
+ΓùÅ
+trl:
+Γ₧ó
+TRL OpenEnv Doc:
+Γ₧ó
+Sudoku example:
+https://huggingface.co/docs/trl/en/openenv 
+https://github.com/huggingface/trl/blob/main/examples/notebooks/openenv_sudoku_grpo.ipynb
+Γ₧ó
+Wordle example:
+Γ₧ó
+More TRL examples:
+https://github.com/huggingface/trl/blob/main/examples/notebooks/openenv_wordle_grpo.ipynb
+https://github.com/huggingface/trl/tree/main/examples/scripts/openenv
+
+=== PAGE 76 ===
+ΓùÅ
+OpenEnv fundamentals, architecture
+ΓùÅ
+Local dev, Docker, and HF Spaces deployment
+ΓùÅ
+OpenEnv in Practice
+ΓùÅ
+Training (TRL & Unsloth)
+ΓùÅ
+How-to-Access-Infrastructure (Training & Inference)
+
+=== PAGE 77 ===
+Use HF infra to run your training
+References:
+Hugging Face billing and 
+credit Hugging Face jobs
+Hugging Face jobs docs
+Job CLI doc
+Run and manage 
+Jobs Pricing and 
+Billing Jobs examples
+https://huggingface.co/settings/billing 
+https://huggingface.co/settings/jobs 
+https://huggingface.co/docs/hub/jobs 
+https://huggingface.co/docs/huggingface_hub/guides/cli#hf-job
+s https://huggingface.co/docs/huggingface_hub/guides/jobs 
+https://huggingface.co/docs/hub/jobs-pricing 
+https://huggingface.co/docs/hub/jobs-examples
+ΓùÅ
+Hugging Face Jobs provide compute for AI and 
+data workflows
+ΓùÅ
+You can run jobs using the hf CLI, the 
+huggingface_hub Python client, or the Jobs HTTP API
+ΓùÅ
+Jobs support any hardware from CPUs to H100s & 
+TPUs, with pay-as-you-go
+
+=== PAGE 78 ===
+-
+Depends on your model size, you can choose your GPU model
+-
+We suggest choose your GPU wisely so you can run your training 
+/ inference with your partner for a reasonable time (credit)
+-
+A T4 GPU (small / medium) would be a good choice
+
+=== PAGE 79 ===
+-
+You can see what GPUs you can request (hf jobs hardware):
+
+=== PAGE 80 ===
+- You can request a T4 
+(small/medium) machine 
+via hf CLI (after you 
+authenticated)
+- This example shows 
+nvidia-smi, but you can 
+--model_name_or_path Qwen/Qwen2-0.5B ΓÇª 
+)
+
+=== PAGE 81 ===
+Still have Questions?
+Please mention it in discord
+(India-OpenEnv-Hackathon Channels) 
+and we do our best to answer
+

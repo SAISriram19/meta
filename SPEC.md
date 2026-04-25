@@ -1,4 +1,4 @@
-# Stakeholder Management Gym
+# Meta
 
 **OpenEnv Round 2 submission. Themes: Long-Horizon Planning (T2) + Self-Improvement (T4) + touch of World Modeling (T3).**
 
@@ -220,7 +220,7 @@ decision_points:
 ## Folder structure
 
 ```
-stakeholder-gym/
+meta/
 ├── env/
 │   ├── __init__.py
 │   ├── models.py              # Pydantic: Action, Observation, State, Scenario

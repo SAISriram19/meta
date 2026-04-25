@@ -1,7 +1,7 @@
 apiVersion: openenv.meta-pytorch.org/v1
 kind: Environment
 metadata:
-  name: stakeholder-management-gym
+  name: meta
   version: 0.1.0
   authors:
     - name: SAI Sriram Kota

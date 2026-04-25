@@ -1,1 +1,1 @@
-"""OpenEnv-compliant FastAPI server for Stakeholder Management Gym."""
+"""OpenEnv-compliant FastAPI server for Meta."""

@@ -1,4 +1,4 @@
-"""Pydantic models for Stakeholder Management Gym.
+"""Pydantic models for Meta.
 
 All data structures that cross the client/server boundary or persist between
 steps live here. Keep them minimal and explicit — the LLM agent will see many

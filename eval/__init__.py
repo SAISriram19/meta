@@ -1,1 +1,1 @@
-"""Evaluation harness for Stakeholder Management Gym."""
+"""Evaluation harness for Meta."""

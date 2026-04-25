@@ -1,4 +1,4 @@
-"""Reward logic for Stakeholder Management Gym.
+"""Reward logic for Meta.
 
 Step-level signals (Silicon-Mirror-inspired critic):
     sycophancy_penalty          : -0.05  AGREE on BAD

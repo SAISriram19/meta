@@ -8,24 +8,24 @@ left is creating the Space and pushing.
 ```bash
 # One-time: create the Space on HF. Replace <username>.
 # Visit https://huggingface.co/new-space, pick "Docker" template.
-# Name it, for example: stakeholder-management-gym
+# Name it, for example: meta
 
 # Then from the local repo:
 git init -b main
 git add .
-git commit -m "initial stakeholder-gym drop"
-git remote add hf https://huggingface.co/spaces/<username>/stakeholder-management-gym
+git commit -m "initial meta drop"
+git remote add hf https://huggingface.co/spaces/<username>/meta
 git push hf main
 ```
 
 HF Spaces builds the Dockerfile automatically. Build logs appear in the Space UI.
 Once the container passes its healthcheck, the env is live at:
-`https://<username>-stakeholder-management-gym.hf.space`
+`https://<username>-meta.hf.space`
 
 ## Smoke-check the deployed env
 
 ```bash
-SPACE=https://<username>-stakeholder-management-gym.hf.space
+SPACE=https://<username>-meta.hf.space
 
 curl $SPACE/health
 curl $SPACE/tasks
@@ -36,8 +36,8 @@ curl -X POST $SPACE/reset -H 'content-type: application/json' \
 ## Local Docker (smoke before pushing)
 
 ```bash
-docker build -t stakeholder-gym .
-docker run --rm -p 7860:7860 stakeholder-gym
+docker build -t meta .
+docker run --rm -p 7860:7860 meta
 
 # in another shell
 curl localhost:7860/health

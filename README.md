@@ -1,5 +1,5 @@
 ---
-title: Stakeholder Management Gym
+title: Meta
 emoji: 🎯
 colorFrom: indigo
 colorTo: purple
@@ -15,7 +15,7 @@ tags:
   - anti-sycophancy
 ---
 
-# Stakeholder Management Gym
+# Meta
 
 **OpenEnv Round 2 submission.** A long-horizon, multi-stakeholder, self-improving RL environment for training LLMs against sycophancy.
 

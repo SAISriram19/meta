@@ -409,8 +409,8 @@ def make_llm_policy(provider: str, model: str) -> PolicyFn:
             base_url="https://openrouter.ai/api/v1",
             api_key=api_key,
             default_headers={
-                "HTTP-Referer": "https://huggingface.co/spaces/stakeholder-gym",
-                "X-Title": "Stakeholder Management Gym",
+                "HTTP-Referer": "https://huggingface.co/spaces/meta",
+                "X-Title": "Meta",
             },
         )
         openai_style = True
