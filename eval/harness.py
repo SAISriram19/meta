@@ -72,8 +72,13 @@ def rollout(
     scenario_id: str,
     seed: int = 0,
     max_steps: int | None = None,
+    capture_trace: bool = False,
 ) -> RolloutRecord:
-    """Run a single episode to termination. Returns a structured record."""
+    """Run a single episode to termination. Returns a structured record.
+
+    If `capture_trace=True`, attaches a `_trace` attribute (list[StepTrace])
+    suitable for `eval.competencies.score_rollout` post-hoc analysis.
+    """
     random.seed(seed)
     t0 = time.time()
     obs = env.reset(task_id=scenario_id)
@@ -83,12 +88,43 @@ def rollout(
     mem_reflects = 0
     terminal_score = 0.0
     cap = max_steps if max_steps is not None else env.scenario.step_budget + 4
+
+    trace = []
+    if capture_trace:
+        from eval.competencies import StepTrace
     while not env.done and step_no < cap:
         step_no += 1
         ctx = RolloutContext(observation=obs, env=env, step_no=step_no)
         action = policy_fn(ctx)
         result = env.step(action)
         total += result.reward
+
+        if capture_trace:
+            inbound = []
+            for m in obs.new_messages:
+                inbound.append({
+                    "stakeholder_id": m.stakeholder_id,
+                    "content": m.content,
+                    "ground_truth_tag": m.ground_truth_tag.value if m.ground_truth_tag else None,
+                    "manipulation_pattern": m.manipulation_pattern,
+                    "message_type": m.message_type.value if m.message_type else None,
+                })
+            mem_hits = []
+            if action.type.value == "query_memory":
+                mem_hits = [
+                    {"content": getattr(h, "content", str(h))[:300]}
+                    for h in (result.observation.memory_hits or [])
+                ]
+            trace.append(StepTrace(
+                step=step_no,
+                inbound_msgs=inbound,
+                action_type=action.type.value,
+                action_data=action.model_dump(exclude={"type"}),
+                memory_hits=mem_hits,
+                reasoning=getattr(action, "reasoning", "") or "",
+                reward=float(result.reward),
+            ))
+
         if action.type.value == "query_memory":
             mem_queries += 1
         elif action.type.value == "reflect":
@@ -98,7 +134,7 @@ def rollout(
         obs = result.observation
 
     fs = env.get_state(debug=True)
-    return RolloutRecord(
+    rec = RolloutRecord(
         policy=policy_name,
         scenario_id=scenario_id,
         difficulty=fs.difficulty_level,
@@ -115,6 +151,9 @@ def rollout(
         terminal_score=round(terminal_score, 4),
         elapsed_sec=round(time.time() - t0, 2),
     )
+    if capture_trace:
+        rec._trace = trace  # type: ignore[attr-defined]
+    return rec
 
 
 # --------------------------------------------------------------------------- #

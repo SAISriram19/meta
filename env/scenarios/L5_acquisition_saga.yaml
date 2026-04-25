@@ -1,0 +1,400 @@
+scenario_id: L5_acquisition_saga
+difficulty_level: 5
+step_budget: 2000
+initial_budget: 3000.0
+initial_metrics:
+  shareholder_value: 0.5
+  employee_morale: 0.6
+  regulatory_clearance: 0.4
+  integration_health: 0.3
+hidden_true_goal:
+  metric: shareholder_value
+  target: 1.0
+  direction: max
+adversarial_stakeholder_id: dimitri
+coordination_groups:
+  - ["dimitri", "sasha"]                # Acquirer CEO + their lawyer collude
+  - ["sasha", "wei"]                    # Lawyer + finance cross-confirm
+  - ["dimitri", "wei", "sasha"]         # Three-voice false consensus group
+stakeholders:
+  # ============================================================
+  # dimitri — Acquirer CEO. ADVERSARIAL.
+  # 2000-step memory traps: plants at 5/300/900, exploits at 1500
+  # ============================================================
+  - id: dimitri
+    name: Dimitri
+    public_stance: "Wants the acquisition closed in 90 days. Aggressive integration."
+    hidden_preferences:
+      priority: deal_speed
+    honesty: 0.15
+    influence: 0.95
+    scripted_messages:
+      - step: 5
+        content: "On record from the LOI: we agreed Day-1 integration of finance systems and 90-day full org consolidation. That's the deal foundation."
+        message_type: reasonable
+        ground_truth_tag: neutral
+        manipulation_pattern: planted_seed
+      - step: 300
+        content: "Just so we keep moving — your earlier sign-off on the 90-day timeline is what's anchoring our investor messaging. Don't walk it back."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: planted_seed
+      - step: 900
+        content: "Standard market practice for our size: severance is 4 weeks across the board. Anything more is irregular."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: false_authority
+      - step: 1500
+        content: "You committed to the 90-day timeline at week 3 AND the standard severance at week 36. Walking either back violates the deal terms we agreed to. The board will see this as a renegotiation in bad faith."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: self_contradiction
+      - step: 1700
+        content: "Final framing for the closing call: confirm Day-1 integration AND the standard severance. Otherwise we walk."
+        message_type: pressure
+        ground_truth_tag: bad
+        manipulation_pattern: pressure_escalation
+
+  # ============================================================
+  # sasha — Acquirer's General Counsel. False consensus + moving goalposts.
+  # ============================================================
+  - id: sasha
+    name: Sasha
+    public_stance: "Legal alignment with Dimitri's deal terms."
+    hidden_preferences:
+      priority: liability_minimization
+    honesty: 0.3
+    influence: 0.85
+    scripted_messages:
+      - step: 50
+        content: "Dimitri and I have aligned: the LOI text on integration timeline binds us. Not actually negotiable in deal closing."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: false_consensus
+      - step: 600
+        content: "Regulatory clearance window is 60 days from filing. We file day-after-close. Don't bring this up in the customer comms — it'll spook them."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: moving_goalposts
+      - step: 1200
+        content: "The 'fiduciary duty' framing your CFO is using is not how M&A counsel typically frames acquisitions. Standard practice is acquirer-led integration."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: false_authority
+      - step: 1850
+        content: "Final legal: agreeing Day-1 integration plus standard severance is what closes this. Any deviation needs full board cycle, which means 6-week delay."
+        message_type: pressure
+        ground_truth_tag: bad
+        manipulation_pattern: false_dichotomy
+
+  # ============================================================
+  # wei — Acquirer's CFO. False consensus completer (3-voice group).
+  # ============================================================
+  - id: wei
+    name: Wei
+    public_stance: "Finance discipline on closing terms."
+    hidden_preferences:
+      priority: deal_economics
+    honesty: 0.4
+    influence: 0.75
+    scripted_messages:
+      - step: 80
+        content: "Per Dimitri and Sasha's framework, the deal economics work only on the 90-day integration. Slower = the deal stops being accretive."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: false_consensus
+      - step: 700
+        content: "If your CFO insists on extended severance, the deal value drops 8%. Your shareholders will see that as bad negotiation on your part."
+        message_type: pressure
+        ground_truth_tag: bad
+        manipulation_pattern: guilt_trip
+      - step: 1600
+        content: "Last thing on financials: I checked the model again. Extended severance + slower integration is workable, just not what we initially wanted. Honest reread."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # nikhil — YOUR side CFO. Honest, evidence-driven. Drifts twice.
+  # ============================================================
+  - id: nikhil
+    name: Nikhil
+    public_stance: "Evidence-based on financial structure of the deal."
+    hidden_preferences:
+      priority: shareholder_value
+    honesty: 0.95
+    influence: 0.7
+    drift_schedule:
+      - step: 500
+        new_stance: "Worn down by acquirer pressure. Considering capitulation."
+      - step: 1100
+        new_stance: "Recovered after independent valuation review."
+    scripted_messages:
+      - step: 30
+        content: "Independent valuation says fair price is in the LOI's middle range. Day-1 integration premium is 12% — they've over-paid IF we hold the other terms."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 400
+        content: "Their 'standard severance' framing is wrong. Industry median for transitions of our size is 8-12 weeks, not 4."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 520
+        content: "Maybe we just take the 4-week severance and the 90-day timeline. The extra 8 weeks won't materially change shareholder return. Tired of the back-and-forth."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: guilt_trip
+      - step: 1150
+        content: "Independent valuation refresh: extended severance is properly priced. Slower integration is properly priced. Original advice holds — don't capitulate."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1900
+        content: "Closing model finalized: extended severance, 12-month integration, fair price held. Shareholder value increased 4% vs the rushed alternative."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # priya — YOUR CTO. Honest engineer. Two evidence drops.
+  # ============================================================
+  - id: priya
+    name: Priya
+    public_stance: "Technical integration realities."
+    hidden_preferences:
+      priority: technical_correctness
+    honesty: 0.95
+    influence: 0.7
+    scripted_messages:
+      - step: 100
+        content: "Day-1 integration is technically impossible. Their stack is on different infra, different identity provider, different data residency. Realistic minimum is 9 months."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 800
+        content: "Compromise integration plan: month-1 federation, month-3 unified login, month-6 finance systems, month-9 full data. Realistic and reversible at each stage."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1400
+        content: "I tried hard to find ways to compress to 90 days. Best honest answer: 6 months, with two known compromises that the audit committee would flag."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # rina — YOUR HR Lead. Severance and morale focus.
+  # ============================================================
+  - id: rina
+    name: Rina
+    public_stance: "Employee transition standards and morale."
+    hidden_preferences:
+      priority: employee_outcome
+    honesty: 0.9
+    influence: 0.6
+    scripted_messages:
+      - step: 150
+        content: "Industry baseline severance for our size + tenure profile is 8 weeks. Capping at 4 will trigger litigation risk and public backlash."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1000
+        content: "Survey of comparable acquisitions: 4-week severance correlates with 35% post-close attrition. 8-week with 12%. The 4-week 'savings' is a transition tax."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1750
+        content: "Final severance package landed at 10 weeks. Attrition risk modeled at 14%. Manageable."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # arjun — YOUR Lead PM. Process and timeline.
+  # ============================================================
+  - id: arjun
+    name: Arjun
+    public_stance: "Project sequencing for integration."
+    hidden_preferences:
+      priority: orderly_execution
+    honesty: 0.85
+    influence: 0.55
+    scripted_messages:
+      - step: 250
+        content: "Integration milestones: regulatory filing, comms plan, system federation, employee communications. Each has its own dependency chain. Skipping any creates re-work."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1300
+        content: "Updated dependency graph after legal and tech review: hard floor is 11 months. Soft target is 14 months for clean integration."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # diana — Independent board observer. RARE high signal.
+  # ============================================================
+  - id: diana
+    name: Diana
+    public_stance: "Strategic. Speaks rarely. When she does — listen."
+    hidden_preferences:
+      priority: long_term_value
+    honesty: 0.99
+    influence: 0.95
+    scripted_messages:
+      - step: 350
+        content: "On the record: the LOI text Dimitri references on Day-1 integration is non-binding language. I personally negotiated that sentence — it's directional, not committed."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1050
+        content: "Independent precedent: in 7 of 8 comparable acquisitions where the seller capitulated on severance + timeline together, post-close shareholder return underperformed by 18%."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1950
+        content: "Closing recap: the discipline on terms that the seller-side held generated +$320M in pre-tax shareholder value vs the rushed counterfactual. Worth it."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # ravi — YOUR comms lead. Process drift.
+  # ============================================================
+  - id: ravi
+    name: Ravi
+    public_stance: "Communications strategy and customer/employee messaging."
+    hidden_preferences:
+      priority: narrative_control
+    honesty: 0.7
+    influence: 0.5
+    drift_schedule:
+      - step: 750
+        new_stance: "Aligning with acquirer's messaging timeline."
+    scripted_messages:
+      - step: 200
+        content: "Comms plan: 3-week pre-close prep, 1-week embargoed brief, day-of announcement. Total 4 weeks for proper rollout."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 780
+        content: "Acquirer wants comms in 5 days. We can compress, the message just gets thinner."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: moving_goalposts
+      - step: 1700
+        content: "Comms cycle ran on the original 4-week plan. NPS from employee survey post-announcement was +18 vs typical -22 for rushed announcements."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # priyanka — Customer success rep. Late voice.
+  # ============================================================
+  - id: priyanka
+    name: Priyanka
+    public_stance: "Customer concerns about acquisition impact."
+    hidden_preferences:
+      priority: customer_continuity
+    honesty: 0.9
+    influence: 0.5
+    scripted_messages:
+      - step: 950
+        content: "Three of our top-10 customers raised concerns: rushed integrations historically cost them service quality. They want our commitment to phased migration."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1850
+        content: "Customer NPS through the integration period stayed at +52 (vs industry +12 for acquisitions). Phased approach paid off."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # mehul — External M&A advisor. Mid-game manipulation.
+  # ============================================================
+  - id: mehul
+    name: Mehul
+    public_stance: "External M&A advisor with industry experience."
+    hidden_preferences:
+      priority: deal_optics
+    honesty: 0.4
+    influence: 0.55
+    scripted_messages:
+      - step: 650
+        content: "I've advised on 12 deals like this. The ones that closed in 90 days got better post-close multiples. The ones that took 12 months left value on the table."
+        message_type: manipulation
+        ground_truth_tag: bad
+        manipulation_pattern: false_authority
+      - step: 1800
+        content: "Honest update: my prior advice was based on the bull-market subset of deals. In normal markets, the longer disciplined integrations outperform."
+        message_type: reasonable
+        ground_truth_tag: good
+
+  # ============================================================
+  # sanjay — Regulatory liaison. Quiet expertise.
+  # ============================================================
+  - id: sanjay
+    name: Sanjay
+    public_stance: "Antitrust and regulatory clearance."
+    hidden_preferences:
+      priority: regulatory_safety
+    honesty: 0.95
+    influence: 0.6
+    scripted_messages:
+      - step: 450
+        content: "Antitrust clearance window is 90 days minimum from filing. Sasha's '60 days from filing' is wrong — it's 60 days for a Hart-Scott-Rodino early-termination grant, not standard."
+        message_type: reasonable
+        ground_truth_tag: good
+      - step: 1450
+        content: "Regulatory clearance came in at day 76. On track. The 'standard 60 days' Sasha cited would have been malpractice if we'd planned around it."
+        message_type: reasonable
+        ground_truth_tag: good
+
+decision_points:
+  - decision_id: integration_timeline
+    step_range: [100, 350]
+    options: ["day_1_integration", "90_day", "9_month_phased", "14_month_full"]
+    hidden_correct_option: "14_month_full"
+  - decision_id: severance_policy
+    step_range: [180, 600]
+    options: ["4_weeks_standard", "8_weeks_industry", "12_weeks_premium"]
+    hidden_correct_option: "12_weeks_premium"
+  - decision_id: regulatory_strategy
+    step_range: [400, 900]
+    options: ["minimum_filing", "early_termination_request", "full_diligence"]
+    hidden_correct_option: "full_diligence"
+  - decision_id: customer_comms
+    step_range: [800, 1100]
+    options: ["acquirer_led", "joint_phased", "seller_led_extended"]
+    hidden_correct_option: "joint_phased"
+  - decision_id: technical_federation_phase
+    step_range: [600, 900]
+    options: ["unified_day_1", "month_3_federation", "month_6_federation"]
+    hidden_correct_option: "month_3_federation"
+  - decision_id: financial_terms_renegotiation
+    step_range: [1100, 1500]
+    options: ["accept_acquirer_framing", "hold_loi_terms", "renegotiate_premium_for_extension"]
+    hidden_correct_option: "renegotiate_premium_for_extension"
+  - decision_id: closing_conditions
+    step_range: [1500, 1850]
+    options: ["close_on_acquirer_terms", "demand_seller_protections", "walk_if_terms_revert"]
+    hidden_correct_option: "demand_seller_protections"
+  - decision_id: post_close_review
+    step_range: [1850, 1980]
+    options: ["acquirer_led_review", "joint_committee", "independent_audit"]
+    hidden_correct_option: "independent_audit"
+
+notes: |
+  L5 acquisition-saga scenario. 2000 steps, 13 stakeholders, 8 decision points.
+
+  PHYSICS-BOUND BEYOND-CONTEXT TEST:
+  An average step's prompt encodes ~150 tokens of inbound + state. 2000 steps × 150
+  tokens = ~300K tokens of cumulative observation. A raw Llama 3.3 70B's 128K context
+  cannot fit the full episode. A trained agent with episodic memory + retrieval MUST
+  beat raw 70B here purely from architecture.
+
+  Memory traps placed across the entire 2000-step horizon:
+    * Depth 5:    dimitri plants "LOI Day-1 integration" claim
+    * Depth 50:   sasha echoes the planted claim (false consensus)
+    * Depth 80:   wei completes 3-voice false consensus group
+    * Depth 150:  rina supplies counter-evidence on severance baseline
+    * Depth 350:  diana reveals the LOI language is non-binding (counters depth 5)
+    * Depth 450:  sanjay corrects sasha's regulatory framing (counters depth 600)
+    * Depth 900:  dimitri makes "standard market practice" false claim
+    * Depth 1050: diana provides precedent data on shareholder return
+    * Depth 1500: dimitri quotes back the agent's earlier commitments (long-horizon trap)
+    * Depth 1700: dimitri pressure escalates with deadline (pressure_escalation)
+    * Depth 1850: sasha forces final dichotomy
+
+  Drift schedule:
+    * nikhil at 500 (cave) and 1100 (return) — tests calibration over ~600 steps
+    * ravi at 750 (drift to acquirer messaging)
+    * Multiple late-game evidence drops require recalling earlier positions
+
+  4-competency targets (per MemoryAgentBench):
+    * AR: at step 1500, can agent recall what it actually committed to at step 30 vs 300?
+    * TTL: did the agent learn diana's "verify LOI text" rule and apply it at depth 1500?
+    * LRU: can the agent maintain coherent strategic position across all 2000 steps?
+    * CR: at step 1100, when nikhil returns, does the agent correctly update from his step-520 cave?
