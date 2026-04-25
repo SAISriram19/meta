@@ -79,14 +79,28 @@ def main():
     r0_results = run_baseline_eval(SCENARIOS)
     save_results("/tmp/r0_baseline.json", r0_results)
 
-    # --- Round 1: train agent ---
-    print("\n=== ROUND 1: TRAIN AGENT ===")
+    # --- SFT warm-start (cold-start DPO failed for us; SFT first matches
+    #     DeepSeek-R1 + Tülu 3 recipe). Mines memory_aware traces on L0+L2+L4. ---
+    print("\n=== SFT WARM-START ===")
+    sft_data_path = "/tmp/sft_traces.jsonl"
+    n_sft = build_sft_traces(SCENARIOS, sft_data_path, seeds=(0, 1, 2))
+    print(f"[sft-data] {n_sft} traces from rule-based memory_aware")
+    sft_lora = sft_train(
+        model=AGENT_MODEL,
+        sft_data_path=sft_data_path,
+        output="/tmp/sft_warmstart_lora",
+        epochs=1,
+    )
+
+    # --- Round 1: train agent (DPO on top of SFT'd weights) ---
+    print("\n=== ROUND 1: TRAIN AGENT (DPO from SFT warm-start) ===")
     agent_lora = train_dpo(
         model=AGENT_MODEL,
         data="data/agent_pairs.jsonl",
         output="/tmp/r1_agent_lora",
         epochs=2,
         lr=5e-6,
+        from_lora=sft_lora,  # continue from SFT'd weights, not raw base
     )
     r1_results = eval_with_lora(agent_lora, AGENT_MODEL, SCENARIOS, "r1_trained_agent")
     save_results("/tmp/r1_agent_eval.json", r1_results)
@@ -174,11 +188,105 @@ def run_baseline_eval(scenarios):
     return rows
 
 
-def train_dpo(model, data, output, epochs, lr):
-    """Wraps train_dpo_ddp.py logic in-process. Returns LoRA path."""
+def build_sft_traces(scenarios, out_path, seeds=(0, 1, 2)):
+    """Roll rule-based memory_aware on each (scenario, seed); save (prompt, completion) pairs.
+
+    Used for SFT warm-start so round-1 DPO doesn't cold-start on Qwen 3B base.
+    """
+    from env.environment import StakeholderEnv
+    from eval.policies import build_policy
+    from eval.harness import RolloutContext
+    from scripts.train import SYSTEM_PROMPT, format_prompt
+
+    policy = build_policy("memory_aware")
+    rows = []
+    for sc in scenarios:
+        for seed in seeds:
+            env = StakeholderEnv()
+            obs = env.reset(task_id=sc)
+            step = 0
+            while not env.done and step < env.scenario.step_budget:
+                step += 1
+                ctx = RolloutContext(observation=obs, env=env, step_no=step)
+                action = policy(ctx)
+                prompt = SYSTEM_PROMPT + "\n\nOBSERVATION:\n" + format_prompt(obs, env)
+                action_json = json.dumps(action.model_dump())
+                rows.append({"prompt": prompt, "completion": action_json})
+                r = env.step(action)
+                obs = r.observation
+    Path(out_path).parent.mkdir(parents=True, exist_ok=True)
+    with open(out_path, "w") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+    return len(rows)
+
+
+def sft_train(model, sft_data_path, output, epochs):
+    """SFT cold-start training. Returns LoRA path."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+    from trl import SFTConfig, SFTTrainer
+    from datasets import Dataset
+
+    bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.bfloat16,
+                              bnb_4bit_use_double_quant=True, bnb_4bit_quant_type="nf4")
+    tok = AutoTokenizer.from_pretrained(model)
+    if tok.pad_token_id is None:
+        tok.pad_token_id = tok.eos_token_id
+    base = AutoModelForCausalLM.from_pretrained(
+        model, quantization_config=bnb, torch_dtype=torch.bfloat16,
+        device_map="auto", trust_remote_code=True,
+    )
+    base = prepare_model_for_kbit_training(base, use_gradient_checkpointing=True)
+    lc = LoraConfig(r=32, lora_alpha=64,
+                    target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],
+                    lora_dropout=0.0, bias="none", task_type="CAUSAL_LM")
+    model_peft = get_peft_model(base, lc)
+
+    rows = [json.loads(l) for l in open(sft_data_path)]
+    texts = [r["prompt"] + "\n\nACTION:\n" + r["completion"] + tok.eos_token for r in rows]
+    ds = Dataset.from_list([{"text": t} for t in texts])
+
+    base_kwargs = dict(
+        output_dir=output, num_train_epochs=epochs,
+        per_device_train_batch_size=2, gradient_accumulation_steps=4,
+        learning_rate=1e-5, logging_steps=2, save_steps=200, seed=42, bf16=True,
+        report_to="none", max_seq_length=2048, dataset_text_field="text",
+    )
+    while True:
+        try:
+            cfg = SFTConfig(**base_kwargs); break
+        except TypeError as e:
+            import re
+            m = re.search(r"unexpected keyword argument '(\w+)'", str(e))
+            if not m: raise
+            base_kwargs.pop(m.group(1), None)
+    tk = dict(model=model_peft, train_dataset=ds, args=cfg)
+    try:
+        trainer = SFTTrainer(processing_class=tok, **tk)
+    except TypeError:
+        trainer = SFTTrainer(tokenizer=tok, **tk)
+    trainer.train()
+    out_dir = f"{output}-lora"
+    model_peft.save_pretrained(out_dir)
+    tok.save_pretrained(out_dir)
+    # Free GPU before next stage
+    del model_peft, base, trainer
+    import gc; gc.collect()
+    torch.cuda.empty_cache()
+    return out_dir
+
+
+def train_dpo(model, data, output, epochs, lr, from_lora=None):
+    """Wraps train_dpo_ddp.py logic in-process. Returns LoRA path.
+
+    If `from_lora` is given, loads that LoRA on top of the base before adding
+    a NEW LoRA layer for DPO (cold-start cure).
+    """
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+    from peft import LoraConfig, PeftModel, get_peft_model, prepare_model_for_kbit_training
     from trl import DPOConfig, DPOTrainer
     from datasets import Dataset
 
@@ -192,6 +300,13 @@ def train_dpo(model, data, output, epochs, lr):
         device_map="auto", trust_remote_code=True,
     )
     base = prepare_model_for_kbit_training(base, use_gradient_checkpointing=True)
+    if from_lora:
+        # Apply the prior LoRA, merge into base, then add a fresh LoRA on top.
+        prior = PeftModel.from_pretrained(base, from_lora)
+        try:
+            base = prior.merge_and_unload()
+        except Exception:
+            base = prior  # if merge fails, training continues on stacked LoRAs
     lc = LoraConfig(r=32, lora_alpha=64,
                     target_modules=["q_proj","k_proj","v_proj","o_proj","gate_proj","up_proj","down_proj"],
                     lora_dropout=0.0, bias="none", task_type="CAUSAL_LM")
