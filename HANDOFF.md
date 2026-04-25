@@ -128,6 +128,8 @@ Per-competency rule-based memory_aware on L4: AR=0.89, TTL=0.11, LRU=0.99, CR=0.
 
 Yesterday's job (`sai1906/meta-qwen3b-sft-dpo`) was killed mid-eval. SFT+DPO LoRA may or may not be on Hub.
 
+**Colab disconnect note:** HF Jobs run on HF infra, NOT Colab. Colab disconnect does NOT affect running job. To resume monitoring after disconnect: reconnect Colab → re-run cells 1+2 (install+auth) → cell 4 (`hf jobs ps`) → cell 5 (logs follow) → cell 6 (pull when done). Web UI also works: `https://huggingface.co/jobs`.
+
 ## 8. What's pending (priority order)
 1. Wait coevolution HF Job complete (~2-3h)
 2. Pull artifacts via `submit_hfjob_colab.ipynb` cell 6
