@@ -91,3 +91,14 @@ yarn-error.log
 *.tmp
 *.temp
 Desktop.ini
+
+# --------------------------------------------------------------------------- #
+# Local-only scratch (PDF extracts, slide images, hackathon docs)             #
+# --------------------------------------------------------------------------- #
+_pdf_*
+_slide_*
+_extract_*
+_read_*
+*.pdf
+[External]*.md
+data/dpo_pairs_v2.jsonl
