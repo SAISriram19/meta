@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # which is fine for the server — agents use semantic retrieval via the KG + PPR.
 COPY requirements-server.txt ./requirements-server.txt
 RUN pip install -r requirements-server.txt
+# OpenEnv SDK — required by env/openenv_compat.py (server entrypoint).
+RUN pip install openenv
 
 # Copy code (everything server-side needs at runtime).
 COPY env ./env
@@ -29,4 +31,4 @@ EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:7860/health').read()" || exit 1
 
-CMD ["sh", "-c", "uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+CMD ["sh", "-c", "uvicorn server.openenv_main:app --host 0.0.0.0 --port ${PORT:-7860}"]

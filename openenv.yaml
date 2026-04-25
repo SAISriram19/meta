@@ -18,7 +18,7 @@ metadata:
     - memory
 spec:
   runtime: docker
-  entrypoint: server.main:app
+  entrypoint: server.openenv_main:app
   port: 7860
   endpoints:
     health: /health
