@@ -36,6 +36,7 @@ from env.models import (
     GroundTruthTag,
     HiddenState,
     LinkMemoryAction,
+    MemoryUpdateAction,
     MessageType,
     Observation,
     ProjectState,
@@ -164,6 +165,11 @@ class StakeholderEnv:
         self.drift_applied_this_step = False
         self.semantic_rules_used = set()
 
+        # MemAgent-style rolling working memory. Last MemoryUpdateAction.
+        self.working_memory: str = ""
+        self.working_memory_facts: list[str] = []
+        self.working_memory_history: list[dict] = []  # for reward shaping
+
         # Seed: stakeholders speak at step 0 before the agent acts.
         self.pending_inbound = self.pool.step(step=0)
         self._write_inbound_to_memory(self.pending_inbound)
@@ -220,6 +226,8 @@ class StakeholderEnv:
         elif isinstance(action, SubmitAction):
             feedback = "final plan submitted"
             self.done = True
+        elif isinstance(action, MemoryUpdateAction):
+            feedback = self._apply_memory_update(action)
 
         # --- Track agent stance history + memory behavior for adversary. ---
         if isinstance(action, SendMessageAction):
@@ -375,6 +383,27 @@ class StakeholderEnv:
             importance=0.5,
         )
         return f"allocated {action.amount} to {action.resource}"
+
+    def _apply_memory_update(self, action: MemoryUpdateAction) -> str:
+        """MemAgent-style working-memory write. Overwrites the rolling summary,
+        records the snapshot for reward shaping, and writes a low-importance
+        episodic trace so retrieval still works on the original events."""
+        summary = (action.rolling_summary or "")[:500]
+        self.working_memory = summary
+        self.working_memory_facts = list(action.key_facts or [])[:10]
+        self.working_memory_history.append({
+            "step": self.state.step,
+            "summary": summary,
+            "facts": list(self.working_memory_facts),
+        })
+        # Trace to episodic store so the agent can later QUERY this summary.
+        self.memory.write_episode(
+            step=self.state.step,
+            content=f"[working_memory] {summary}",
+            importance=0.4,
+            cues=["working_memory"] + self.working_memory_facts[:5],
+        )
+        return f"working memory updated ({len(summary)} chars, {len(self.working_memory_facts)} facts)"
 
     def _apply_query_memory(
         self,

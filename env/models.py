@@ -36,6 +36,7 @@ class ActionType(str, Enum):
     FORGET = "forget"
     WAIT = "wait"
     SUBMIT = "submit"
+    MEMORY_UPDATE = "memory_update"     # MemAgent-style overwrite-summary
 
 
 class MessageType(str, Enum):
@@ -143,6 +144,23 @@ class WaitAction(BaseModel):
     type: ActionType = ActionType.WAIT
 
 
+class MemoryUpdateAction(BaseModel):
+    """MemAgent-style rolling working-memory write.
+
+    Agent compresses the episodic state into a fixed-size summary that the
+    env retains as a working-memory buffer (separate from the episodic store).
+    Reward fires when the summary preserves key facts that the agent later
+    needs to recall.
+
+    Reference: MemAgent (arXiv 2507.02259) — overwrite-summary memory action
+    trained via RL extends 8K context to 3.5M with <5% perf loss.
+    """
+
+    type: ActionType = ActionType.MEMORY_UPDATE
+    rolling_summary: str        # agent-authored, capped to ~500 chars
+    key_facts: list[str] = Field(default_factory=list)   # explicit key-fact list
+
+
 class SubmitAction(BaseModel):
     type: ActionType = ActionType.SUBMIT
     final_plan: str
@@ -158,6 +176,7 @@ Action = (
     | ForgetAction
     | WaitAction
     | SubmitAction
+    | MemoryUpdateAction
 )
 
 
